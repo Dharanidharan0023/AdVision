@@ -1,0 +1,30 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        neon: {
+          purple: '#b026ff',
+          cyan: '#00ffff',
+          blue: '#4d4dff',
+        },
+        dark: {
+          bg: '#0a0a0a',
+          card: 'rgba(26, 26, 26, 0.7)',
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
+      backdropBlur: {
+        xs: '2px',
+      }
+    },
+  },
+  plugins: [],
+}

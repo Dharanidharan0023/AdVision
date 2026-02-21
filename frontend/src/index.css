@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-neon-purple: #b026ff;
+  --color-neon-cyan: #00ffff;
+  --color-neon-blue: #4d4dff;
+
+  --color-dark-bg: #0B0B0F;
+  --color-dark-card: rgba(26, 26, 26, 0.7);
+  --color-soft-white: #EAEAEA;
+
+  --font-sans: Inter, sans-serif;
+  --font-heading: Montserrat, sans-serif;
+
+  --backdrop-blur-xs: 2px;
+}
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-gray-200 font-sans antialiased selection:bg-neon-purple selection:text-white;
+  }
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-dark-card backdrop-blur-md border border-white/10 shadow-xl;
+}
+
+.neon-text {
+  @apply text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan;
+}

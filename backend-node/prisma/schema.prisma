@@ -1,0 +1,44 @@
+// Prisma schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      String   @default("ROLE_ADMIN")
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  imageUrl  String?
+  videoUrl  String?
+  videoId   String?
+  featured  Boolean  @default(false)
+
+  // ✅ Prisma handles timestamps automatically
+  createdAt DateTime @default(now())
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  status      String   // Planned | In Progress | Completed
+  imageUrl    String?
+}
+
+model HomeSection {
+  id          Int      @id @default(autoincrement())
+  sectionName String   @unique
+  content     String
+}
