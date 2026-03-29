@@ -47,20 +47,21 @@ const Navbar = () => {
                 scrolled ? 'glass-pill py-4 border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.5)]' : 'bg-transparent py-10 border-transparent'
             }`}
         >
+            <div className="mesh-overlay opacity-10 pointer-events-none" />
             <div className="flex justify-between items-center relative">
                 <Link 
                     to="/" 
                     className="group flex items-center gap-3 z-50 text-white"
                     data-cursor="HOME"
                 >
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center group-hover:bg-neon-cyan transition-all duration-500 group-hover:rotate-[360deg]">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center group-hover:bg-neon-indigo transition-all duration-500 group-hover:rotate-[360deg]">
                         <span className="text-black font-black text-sm">AV</span>
                     </div>
-                    <div className="flex flex-col -gap-1">
+                    <div className="flex flex-col -gap-1 text-left">
                         <span className="text-xl font-black tracking-tighter uppercase leading-none">
                             Studio
                         </span>
-                        <span className="text-[8px] font-bold text-neon-cyan uppercase tracking-[0.5em] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[8px] font-bold text-neon-indigo uppercase tracking-[0.5em] opacity-0 group-hover:opacity-100 transition-opacity">
                             Visionary
                         </span>
                     </div>
@@ -106,6 +107,7 @@ const Navbar = () => {
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         className="fixed inset-4 top-24 bg-dark-bg/98 backdrop-blur-3xl md:hidden flex flex-col items-center justify-center gap-12 z-40 rounded-[4rem] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
                     >
+                        <div className="mesh-overlay opacity-30" />
                         {navLinks.map((link, idx) => (
                             <motion.div
                                 key={link.path}
@@ -117,7 +119,7 @@ const Navbar = () => {
                                     to={link.path}
                                     onClick={() => setIsOpen(false)}
                                     className={`text-6xl font-black tracking-tighter transition-all hover:scale-110 active:scale-90 ${
-                                        location.pathname === link.path ? 'text-neon-cyan' : 'text-white/20 hover:text-white'
+                                        location.pathname === link.path ? 'text-neon-indigo' : 'text-white/20 hover:text-white'
                                     }`}
                                 >
                                     {link.name}
@@ -143,12 +145,13 @@ const NavLink = ({ to, children, active }) => (
         {active && (
             <motion.div
                 layoutId="nav-active"
-                className="absolute inset-0 bg-white/5 border border-white/5 rounded-full -z-0"
+                className="absolute inset-0 bg-neon-indigo/10 border border-neon-indigo/20 rounded-full -z-0"
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
         )}
     </Link>
 );
+
 
 export default Navbar;
 

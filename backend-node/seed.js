@@ -58,6 +58,45 @@ async function main() {
     });
 
     console.log({ post1, post2, project1, project2 });
+
+    // Create Home Sections
+    await prisma.homeSection.upsert({
+        where: { sectionName: 'hero' },
+        update: {},
+        create: {
+            sectionName: 'hero',
+            content: JSON.stringify({
+                title: 'AdVision <br /> <span class="neon-text italic">Studio</span>',
+                subtitle: 'Creative storytelling through cinematic vision.'
+            })
+        }
+    });
+
+    await prisma.homeSection.upsert({
+        where: { sectionName: 'stats' },
+        update: {},
+        create: {
+            sectionName: 'stats',
+            content: JSON.stringify([
+                { label: 'Subscribers', value: '1.09K+' },
+                { label: 'Videos', value: '105' },
+                { label: 'Views', value: '274K+' }
+            ])
+        }
+    });
+
+    // Create Initial About
+    await prisma.about.create({
+        data: {
+            title: 'About AdVision',
+            subtitle: 'Crafting Cinematic Realities',
+            description: 'Founded with a passion for visual excellence, AdVision Studio is dedicated to pushing the boundaries of creative storytelling. We specialize in cinematic vlogs, short films, and digital artistry that captivates and inspires.',
+            experienceYears: 5,
+            imageUrl: 'https://images.unsplash.com/photo-1492691523569-44058d45e3ea?auto=format&fit=crop&q=80'
+        }
+    });
+
+    console.log('Seeding completed!');
 }
 
 main()

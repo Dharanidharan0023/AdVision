@@ -1,6 +1,33 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import { Calendar, Target, CheckCircle2, Rocket, ArrowUpRight, Zap, Eye, Globe } from 'lucide-react';
+import Magnetic from '../components/common/Magnetic';
+import BentoItem from '../components/common/BentoItem';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: { staggerChildren: 0.15, delayChildren: 0.3 }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 40, filter: 'blur(10px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: "spring", stiffness: 100, damping: 20 } }
+};
+
+const getSpan = (index) => {
+    const spans = [
+        "md:col-span-8 lg:col-span-8",
+        "md:col-span-4 lg:col-span-4",
+        "md:col-span-4 lg:col-span-4",
+        "md:col-span-8 lg:col-span-8",
+    ];
+    return spans[index % spans.length];
+};
 
 const Projects = () => {
     const [projects, setProjects] = useState([]);
@@ -9,26 +36,18 @@ const Projects = () => {
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                // Mock data if API fails or is empty for demo purposes
                 const res = await api.get('/public/projects');
                 if (res.data && res.data.length > 0) {
                     setProjects(res.data);
                 } else {
-                    // Fallback mock data for visualization
                     setProjects([
-                        { id: 1, title: 'AdVision Website', status: 'In Progress', description: 'Building the official portfolio site with React and Node.js.', imageUrl: '', createdAt: new Date().toISOString() },
-                        { id: 2, title: 'YouTube Revamp', status: 'Completed', description: 'Complete channel rebranding with new intro and outro sequences.', imageUrl: '', createdAt: new Date(Date.now() - 86400000 * 30).toISOString() },
-                        { id: 3, title: 'Project Neon', status: 'Planned', description: 'Upcoming short film project exploring cyberpunk themes.', imageUrl: '', createdAt: new Date(Date.now() - 86400000 * 60).toISOString() }
+                        { id: 1, title: 'AdVision Global', status: 'In Progress', description: 'Expanding our reach with a new digital ecosystem.', imageUrl: '', createdAt: new Date().toISOString() },
+                        { id: 2, title: 'Cinematic Redefined', status: 'Completed', description: 'A breakthrough in high-fidelity storytelling.', imageUrl: '', createdAt: new Date(Date.now() - 86400000 * 30).toISOString() },
+                        { id: 3, title: 'Project Zenith', status: 'Planned', description: 'The next frontier of interactive visual media.', imageUrl: '', createdAt: new Date(Date.now() - 86400000 * 60).toISOString() }
                     ]);
                 }
             } catch (err) {
                 console.error("Failed to fetch projects:", err);
-                // Fallback mock data
-                setProjects([
-                    { id: 1, title: 'AdVision Website', status: 'In Progress', description: 'Building the official portfolio site with React and Node.js.', imageUrl: '', createdAt: new Date().toISOString() },
-                    { id: 2, title: 'YouTube Revamp', status: 'Completed', description: 'Complete channel rebranding with new intro and outro sequences.', imageUrl: '', createdAt: new Date(Date.now() - 86400000 * 30).toISOString() },
-                    { id: 3, title: 'Project Neon', status: 'Planned', description: 'Upcoming short film project exploring cyberpunk themes.', imageUrl: '', createdAt: new Date(Date.now() - 86400000 * 60).toISOString() }
-                ]);
             } finally {
                 setLoading(false);
             }
@@ -36,91 +55,141 @@ const Projects = () => {
         fetchProjects();
     }, []);
 
-    if (loading) return <div className="text-white pt-32 text-center text-xl">Loading timeline...</div>;
+    if (loading) return (
+        <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+            <motion.div 
+                animate={{ rotate: 360 }} 
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                className="w-10 h-10 border-2 border-neon-cyan border-t-transparent rounded-full shadow-[0_0_15px_rgba(0,255,255,0.3)]"
+            />
+        </div>
+    );
 
     return (
-        <div className="min-h-screen pt-24 px-6 bg-dark-bg pb-20 overflow-x-hidden">
-            <div className="container mx-auto">
-                <motion.h1
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-4xl md:text-5xl font-bold text-white mb-16 text-center"
+        <div className="min-h-screen pt-40 px-6 bg-dark-bg pb-32 overflow-hidden relative">
+            {/* Cinematic Backgrounds */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <div className="aurora-bg opacity-30" />
+                <div className="mesh-overlay opacity-50" />
+            </div>
+            
+            <div className="container mx-auto max-w-7xl relative z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-center mb-32"
                 >
-                    Future <span className="neon-text">Plans</span>
-                </motion.h1>
+                    <span className="text-neon-cyan text-[10px] font-black uppercase tracking-[0.5em] mb-10 block">Architectural Roadmap</span>
+                    <h1 className="text-6xl md:text-[8rem] font-black text-white leading-[0.9] tracking-tighter uppercase relative inline-block">
+                        Vision <span className="neon-text italic relative z-10">Timeline</span>
+                    </h1>
+                </motion.div>
 
-                <div className="relative max-w-4xl mx-auto">
-                    {/* Vertical Line */}
-                    <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-neon-purple via-neon-cyan to-transparent opacity-30 transform md:-translate-x-1/2"></div>
-
+                <motion.div 
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="bento-grid"
+                >
                     {projects.map((project, index) => (
-                        <TimelineItem key={project.id} project={project} index={index} />
+                        <motion.div key={project.id} variants={itemVariants} className={getSpan(index)}>
+                            <div data-cursor="EXPLORE" className="h-full">
+                                <BentoProjectItem project={project} index={index} />
+                            </div>
+                        </motion.div>
                     ))}
-                </div>
+                    
+                    {/* Future Vision Tile (Full Width) */}
+                    <motion.div variants={itemVariants} className="md:col-span-12 lg:col-span-12">
+                        <BentoItem className="glass-modern neon-glow-border p-12 md:p-20 flex flex-col md:flex-row justify-between items-center group overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 to-transparent pointer-events-none" />
+                            <div className="relative text-white space-y-8 max-w-2xl text-center md:text-left mb-10 md:mb-0 z-10">
+                                <div className="inline-flex items-center justify-center p-5 rounded-3xl bg-neon-purple/10 text-neon-purple border border-neon-purple/20 shadow-inner group-hover:bg-neon-purple/20 transition-colors duration-500">
+                                    <Rocket size={36} strokeWidth={1.5} />
+                                </div>
+                                <div>
+                                    <h3 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none mb-6">The Next Phase</h3>
+                                    <p className="text-white/60 text-lg md:text-xl font-medium leading-relaxed max-w-xl">
+                                        Strategic exploration into neuro-cinematic experiences and hyper-premium immersive interfaces.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="relative z-10" data-cursor="INITIALIZE">
+                                <Magnetic>
+                                    <button className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white text-black flex items-center justify-center hover:bg-neon-cyan transition-all duration-700 hover:scale-110 shadow-[0_0_50px_rgba(255,255,255,0.2)] hover:shadow-[0_0_80px_rgba(0,255,255,0.5)] border border-transparent hover:border-white">
+                                        <ArrowUpRight size={48} strokeWidth={1.5} className="group-hover:rotate-45 transition-transform duration-700" />
+                                    </button>
+                                </Magnetic>
+                            </div>
+                        </BentoItem>
+                    </motion.div>
+                </motion.div>
             </div>
         </div>
     );
 };
 
-const TimelineItem = ({ project, index }) => {
-    const isEven = index % 2 === 0;
+const BentoProjectItem = ({ project, index }) => {
+    const isCompleted = project.status === 'Completed';
+
+    const getStatusIcon = (status) => {
+        switch(status) {
+            case 'Completed': return <CheckCircle2 size={16} strokeWidth={2.5} />;
+            case 'In Progress': return <Target size={16} strokeWidth={2.5} />;
+            default: return <Rocket size={16} strokeWidth={2.5} />;
+        }
+    };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className={`flex flex-col md:flex-row items-center justify-between mb-16 relative ${isEven ? 'md:flex-row-reverse' : ''}`}
-        >
-            {/* Timeline Dot */}
-            <div className="absolute left-4 md:left-1/2 w-6 h-6 rounded-full bg-dark-bg border-4 border-neon-cyan shadow-[0_0_15px_#00ffff] transform -translate-x-1/2 md:-translate-x-1/2 z-10 mt-[-150px] md:mt-0"></div>
-
-            {/* Content Card */}
-            <div className={`w-full md:w-[45%] pl-12 md:pl-0 ${isEven ? 'md:pr-12 text-left md:text-right' : 'md:pl-12 text-left'}`}>
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-neon-cyan/50 transition-all duration-300 group hover:shadow-[0_0_30px_rgba(0,255,255,0.1)]">
-                    <div className={`flex flex-col ${isEven ? 'md:items-end' : 'md:items-start'}`}>
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full mb-3 w-fit border ${project.status === 'Completed' ? 'bg-green-500/10 text-green-400 border-green-500/30' :
-                            project.status === 'In Progress' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
-                                'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                            }`}>
-                            {project.status}
-                        </span>
-                        <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-neon-cyan transition-colors">{project.title}</h3>
-                        <p className="text-gray-400 text-sm leading-relaxed mb-4">{project.description}</p>
-                        {project.imageUrl && (
-                            <div className="overflow-hidden rounded-lg w-full h-48 relative border border-white/5 bg-black/40 group-hover:border-neon-cyan/30 transition-colors">
-                                <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-xs uppercase tracking-widest z-0 animate-pulse">
-                                    Loading Image
-                                </div>
-                                <img
-                                    src={project.imageUrl}
-                                    alt={project.title}
-                                    className="w-full h-full object-cover opacity-0 group-hover:scale-110 transition-all duration-700 relative z-10"
-                                    onLoad={(e) => {
-                                        e.target.style.opacity = '0.8';
-                                        e.target.parentElement.querySelector('div').style.display = 'none';
-                                        // add a group-hover class equivalent inline for when hovered
-                                        e.target.addEventListener('mouseenter', () => e.target.style.opacity = '1');
-                                        e.target.addEventListener('mouseleave', () => e.target.style.opacity = '0.8');
-                                    }}
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.parentElement.querySelector('div').innerText = 'Image Unavailable';
-                                        e.target.parentElement.querySelector('div').className = "absolute inset-0 flex items-center justify-center text-red-500/50 text-xs tracking-widest z-0";
-                                        e.target.parentElement.querySelector('div').style.display = 'flex';
-                                    }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-dark-bg/90 via-dark-bg/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-none"></div>
-                            </div>
-                        )}
-                    </div>
-                </div>
+        <BentoItem span="" className="glass-modern neon-glow-border group min-h-[500px] md:min-h-[600px] p-0 overflow-hidden h-full">
+            <div className="absolute inset-0 w-full h-full z-0">
+                {project.imageUrl ? (
+                    <img src={project.imageUrl} className="w-full h-full object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-1000 group-hover:scale-105" alt="" />
+                ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-neon-purple/10 to-neon-cyan/5 group-hover:opacity-50 transition-opacity duration-1000" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-dark-bg/90 via-dark-bg/30 to-transparent pointer-events-none" />
             </div>
 
-            {/* Empty space for the other side */}
-            <div className="w-full md:w-[45%] hidden md:block"></div>
-        </motion.div>
+            <div className="relative z-10 h-full p-10 md:p-14 flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                    <div className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3 backdrop-blur-md shadow-lg ${
+                        isCompleted ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20'
+                    }`}>
+                        {getStatusIcon(project.status)}
+                        {project.status}
+                    </div>
+                    <div className="text-white/20 text-xs font-black uppercase tracking-widest group-hover:text-white transition-colors">
+                        / 0{index + 1}
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 text-neon-purple text-[10px] font-black uppercase tracking-[0.4em]">
+                        <Calendar size={14} className="opacity-80" /> 
+                        {project.createdAt && !isNaN(new Date(project.createdAt)) 
+                            ? new Date(project.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                            : 'Nov 2024'}
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-black text-white leading-none tracking-tighter uppercase group-hover:text-neon-cyan transition-colors duration-700 blur-[0.5px] group-hover:blur-0">
+                        {project.title}
+                    </h2>
+                    <p className="text-gray-400 text-lg font-medium leading-relaxed max-w-lg line-clamp-3 group-hover:text-white transition-colors duration-500">
+                        {project.description}
+                    </p>
+                </div>
+            </div>
+            
+            {/* Minimal Hover Indicator */}
+            <div className="absolute bottom-10 right-10 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 z-20">
+                <Magnetic>
+                    <div className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-110 transition-transform">
+                        <ArrowUpRight size={28} />
+                    </div>
+                </Magnetic>
+            </div>
+        </BentoItem>
     );
 };
 

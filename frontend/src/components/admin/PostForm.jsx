@@ -35,92 +35,101 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
     };
 
     return (
-        <div className="glass-panel p-6 rounded-2xl border border-white/10">
-            <h2 className="text-xl font-bold text-white mb-6">
-                {initialData ? 'Edit Post' : 'Create New Post'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-10">
+            <div className="flex items-center justify-between">
                 <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Title</label>
-                    <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-purple transition-colors"
-                        required
-                    />
+                    <h2 className="text-3xl font-black text-white tracking-tighter">
+                        {initialData ? 'Refine Post' : 'New Creation'}
+                    </h2>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">Content Specification</p>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">YouTube Video URL</label>
-                    <input
-                        type="text"
-                        name="videoUrl"
-                        value={formData.videoUrl || ''}
-                        onChange={(e) => {
-                            const url = e.target.value;
-                            handleChange(e);
-                            // Auto-fetch thumbnail
-                            const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/)([\w-]{11}))/);
-                            if (videoIdMatch && videoIdMatch[1]) {
-                                setFormData(prev => ({
-                                    ...prev,
-                                    videoUrl: url,
-                                    imageUrl: `https://img.youtube.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`
-                                }));
-                            }
-                        }}
-                        placeholder="e.g. https://youtu.be/..."
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-purple transition-colors mb-2"
-                    />
-                    <p className="text-xs text-gray-500">Paste a YouTube link to auto-generate the thumbnail.</p>
+                <button onClick={onCancel} className="text-gray-500 hover:text-white transition-colors">
+                    Cancel
+                </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Headline</label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            placeholder="Descriptive title..."
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Legacy Video Link (Optional)</label>
+                        <input
+                            type="text"
+                            name="videoUrl"
+                            value={formData.videoUrl || ''}
+                            onChange={(e) => {
+                                const url = e.target.value;
+                                handleChange(e);
+                                const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/)([\w-]{11}))/);
+                                if (videoIdMatch && videoIdMatch[1]) {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        videoUrl: url,
+                                        imageUrl: `https://img.youtube.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`
+                                    }));
+                                }
+                            }}
+                            placeholder="YouTube URL..."
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-purple/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
+                        />
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Image URL</label>
+
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Visual Source (URL)</label>
                     <input
                         type="text"
                         name="imageUrl"
                         value={formData.imageUrl}
                         onChange={handleChange}
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-purple transition-colors"
+                        placeholder="Image URL..."
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Content</label>
+
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Narrative</label>
                     <textarea
                         name="content"
                         value={formData.content}
                         onChange={handleChange}
-                        rows={6}
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-purple transition-colors"
+                        rows={8}
+                        placeholder="Share the vision..."
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-purple/50 focus:bg-white/10 transition-all placeholder:text-gray-600 resize-none"
                         required
                     />
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-4 bg-white/5 border border-white/5 p-4 rounded-2xl w-fit">
                     <input
                         type="checkbox"
                         name="featured"
                         checked={formData.featured}
                         onChange={handleChange}
                         id="featured"
-                        className="w-4 h-4 rounded border-gray-600 bg-black/40 text-neon-purple focus:ring-neon-purple"
+                        className="w-5 h-5 rounded-lg border-white/10 bg-dark-bg text-neon-purple focus:ring-neon-purple transition-all"
                     />
-                    <label htmlFor="featured" className="text-sm font-medium text-gray-400">Featured Post</label>
+                    <label htmlFor="featured" className="text-xs font-black uppercase tracking-widest text-gray-400 cursor-pointer select-none">Mark as Featured Highlight</label>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                        Cancel
-                    </button>
+                <div className="flex justify-end pt-8 border-t border-white/5">
                     <button
                         type="submit"
-                        className="px-6 py-2 rounded-lg bg-neon-purple text-white font-medium hover:bg-neon-purple/80 transition-shadow shadow-lg shadow-neon-purple/20"
+                        className="btn-primary px-10 py-4 text-xs font-black uppercase tracking-widest"
                     >
-                        {initialData ? 'Update Post' : 'Create Post'}
+                        {initialData ? 'Update Entity' : 'Finalize Broadcast'}
                     </button>
                 </div>
             </form>

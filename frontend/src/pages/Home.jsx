@@ -1,447 +1,351 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
-import { Play, TrendingUp, Users, Youtube, Star, ExternalLink, ChevronRight, Mail, ArrowRight, MessageSquare, Heart } from 'lucide-react';
+import { motion, useScroll, useTransform, AnimatePresence, useSpring } from 'framer-motion';
+import { useRef, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
-
-// Animated Counter Hook
-const useCounter = (end, duration = 2) => {
-    const [count, setCount] = useState(0);
-    const nodeRef = useRef(null);
-    const inView = useInView(nodeRef, { once: true, margin: "-100px" });
-
-    useEffect(() => {
-        if (!inView) return;
-        let startTimestamp = null;
-        const step = (timestamp) => {
-            if (!startTimestamp) startTimestamp = timestamp;
-            const progress = Math.min((timestamp - startTimestamp) / (duration * 1000), 1);
-            setCount(Math.floor(progress * end));
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            } else {
-                setCount(end); // Ensure exact finish
-            }
-        };
-        window.requestAnimationFrame(step);
-    }, [inView, end, duration]);
-
-    return { count, nodeRef };
-};
-
-const StatItem = ({ label, value, suffix = "", delay = 0 }) => {
-    const { count, nodeRef } = useCounter(value, 2.5);
-    return (
-        <motion.div
-            ref={nodeRef}
-            initial={{ opacity: 0, scale: 0.8, y: 30 }}
-            whileInView={{ opacity: 1, scale: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay, duration: 0.6, type: "spring" }}
-            className="flex flex-col items-center justify-center p-8 rounded-3xl bg-black/40 border border-white/10 backdrop-blur-md shadow-[0_0_30px_rgba(176,38,255,0.1)] group hover:border-neon-purple/50 transition-colors"
-        >
-            <h3 className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tighter group-hover:text-neon-cyan transition-colors duration-500">
-                {count}{suffix}
-            </h3>
-            <p className="text-neon-purple uppercase tracking-widest text-sm font-bold">{label}</p>
-        </motion.div>
-    );
-};
+import { PlayCircle, X, ChevronRight, Calendar, ArrowUpRight, Youtube, Star, Zap, Globe } from 'lucide-react';
+import Magnetic from '../components/common/Magnetic';
+import BentoItem from '../components/common/BentoItem';
 
 const Home = () => {
-    const [latestVideos, setLatestVideos] = useState([]);
-    const [loading, setLoading] = useState(true);
-
     const containerRef = useRef(null);
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end start"]
     });
 
-    const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-    const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-    const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.9]);
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 100,
+        damping: 30,
+        restDelta: 0.001
+    });
+
+    const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+    const heroOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
+
+    // Dynamic Content State
+    const [hero, setHero] = useState({
+        title: 'AdVision <br /> <span className="neon-text italic">Studio</span>',
+        subtitle: 'Creative storytelling through vision.'
+    });
+    const [stats, setStats] = useState([
+        { label: 'Subscribers', value: '1.09K+' },
+        { label: 'Videos', value: '105' },
+        { label: 'Views', value: '274K+' }
+    ]);
+    const [latestPosts, setLatestPosts] = useState([]);
+    const [activeVideo, setActiveVideo] = useState(null);
 
     useEffect(() => {
-        const fetchPosts = async () => {
+        const fetchHomeContent = async () => {
             try {
-                const res = await api.get('/public/posts');
-                // Assume they are videos or we just use posts as videos
-                setLatestVideos(res.data.slice(0, 3));
-            } catch (error) {
-                console.error("Failed to fetch videos", error);
-                // Mock data fallback
-                setLatestVideos([
-                    { id: 1, title: 'I Spent 50 Hours In VR', imageUrl: 'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=800&q=80', description: 'Can you survive a whole weekend in the Metaverse?' },
-                    { id: 2, title: 'Tasting the World\'s SCARIEST Hot Sauce', imageUrl: 'https://images.unsplash.com/photo-1588046138717-d20a7b457fce?w=800&q=80', description: 'We instant regret this decision immediately.' },
-                    { id: 3, title: 'Testing Viral TikTok Gadgets', imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80', description: 'Are these Amazon finds actually worth the money?' }
+                const [heroRes, statsRes, postsRes] = await Promise.allSettled([
+                    api.get('/public/home-section/hero'),
+                    api.get('/public/home-section/stats'),
+                    api.get('/public/posts')
                 ]);
-            } finally {
-                setLoading(false);
+
+                if (heroRes.status === 'fulfilled' && heroRes.value.data) {
+                    try {
+                        const parsed = typeof heroRes.value.data.content === 'string'
+                            ? JSON.parse(heroRes.value.data.content)
+                            : heroRes.value.data.content;
+                        setHero(prev => ({ ...prev, ...parsed }));
+                    } catch (e) {
+                        console.error("Hero parse error:", e);
+                    }
+                }
+                if (statsRes.status === 'fulfilled' && statsRes.value.data) {
+                    try {
+                        const parsed = typeof statsRes.value.data.content === 'string'
+                            ? JSON.parse(statsRes.value.data.content)
+                            : statsRes.value.data.content;
+                        if (Array.isArray(parsed)) setStats(parsed);
+                    } catch (e) {
+                        console.error("Stats parse error:", e);
+                    }
+                }
+                if (postsRes.status === 'fulfilled' && postsRes.value.data) {
+                    setLatestPosts(postsRes.value.data.slice(0, 4));
+                }
+            } catch (err) {
+                console.error("Error fetching home content:", err);
             }
         };
-        fetchPosts();
+        fetchHomeContent();
     }, []);
 
-    // Helper to get image or youtube thumbnail
-    const getThumbnail = (video) => {
-        if (video.imageUrl) return video.imageUrl;
-        if (video.videoId) return `https://img.youtube.com/vi/${video.videoId}/maxresdefault.jpg`;
-        return 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80'; // fallback
+    const handleVideoClick = (videoUrl) => {
+        if (!videoUrl) return;
+        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/)([\w-]{11}))/);
+        if (videoIdMatch && videoIdMatch[1]) {
+            setActiveVideo(videoIdMatch[1]);
+        } else {
+            window.open(videoUrl, '_blank');
+        }
     };
 
     return (
-        <div ref={containerRef} className="min-h-screen bg-dark-bg selection:bg-neon-cyan selection:text-black font-sans overflow-hidden">
+        <div ref={containerRef} className="bg-dark-bg relative">
+            <motion.div className="scroll-progress" style={{ scaleX }} />
+            <div className="aurora-bg" />
 
-            {/* 1. HERO SECTION */}
-            <section className="relative min-h-screen flex items-center justify-center pt-20 px-6">
-                {/* Animated Background Gradients */}
-                <motion.div style={{ y, opacity, scale }} className="absolute inset-0 z-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neon-purple/20 via-dark-bg to-dark-bg" />
-                    <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-neon-cyan/20 rounded-full blur-[150px] animate-pulse" />
-                    <div className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-neon-purple/20 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '2s' }} />
-                    {/* Grid Pattern */}
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBoNDBNNDAgMHY0MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')] opacity-50 mask-image:linear-gradient(to_bottom,white,transparent)]" />
-                </motion.div>
-
-                <div className="container relative z-10 mx-auto text-center flex flex-col items-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="mb-6 flex items-center gap-2 px-4 py-2 rounded-full border border-neon-cyan/30 bg-black/50 backdrop-blur-md"
-                    >
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                        <span className="text-neon-cyan text-xs font-bold tracking-[0.2em] uppercase">
-                            New Video Just Dropped
-                        </span>
-                    </motion.div>
-
-                    {/* Glitch Title Reveal */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-                        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                        transition={{ duration: 1, ease: "circOut" }}
-                        className="relative"
-                    >
-                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 leading-none">
-                            UNLEASH THE<br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan filter drop-shadow-[0_0_20px_rgba(176,38,255,0.8)]">MADNESS</span>
-                        </h1>
-                    </motion.div>
-
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4, duration: 0.8 }}
-                        className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-10 font-medium"
-                    >
-                        Viral challenges, honest reviews, and pure entertainment. Join the fastest growing community on YouTube.
-                    </motion.p>
-
-                    {/* CTA Buttons */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6, duration: 0.8 }}
-                        className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full sm:w-auto"
-                    >
-                        <a href="/posts" className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-neon-purple text-white font-bold text-lg rounded-full overflow-hidden transition-transform active:scale-95 shadow-[0_0_40px_rgba(176,38,255,0.4)] hover:shadow-[0_0_60px_rgba(176,38,255,0.6)]">
-                            <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                            <Play className="w-5 h-5 fill-white" />
-                            <span className="relative z-10">Watch Latest</span>
-                        </a>
-
-                        <a href="/projects" className="group flex items-center justify-center gap-3 px-8 py-4 bg-black/50 border border-white/20 text-white font-bold text-lg rounded-full backdrop-blur-md hover:border-neon-cyan/50 hover:bg-white/5 transition-all duration-300 active:scale-95">
-                            <TrendingUp className="w-5 h-5 group-hover:text-neon-cyan transition-colors" />
-                            <span>Trending</span>
-                        </a>
-                    </motion.div>
-                </div>
-
-                {/* Animated Scroll Down Indicator */}
-                <motion.div
-                    animate={{ y: [0, 15, 0], opacity: [0.3, 1, 0.3] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 cursor-pointer"
-                    onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+            {/* Hero Section */}
+            <section className="relative h-screen flex items-center overflow-hidden px-6">
+                <motion.div 
+                    style={{ y: heroY, opacity: heroOpacity }}
+                    className="absolute inset-0 z-0"
                 >
-                    <span className="text-xs uppercase tracking-[0.3em] font-bold text-gray-500">Scroll Down</span>
-                    <div className="w-px h-16 bg-gradient-to-b from-neon-purple to-transparent" />
+                    <div className="absolute top-[10%] left-[10%] w-[40rem] h-[40rem] bg-neon-purple/10 rounded-full blur-[160px] animate-pulse" />
+                    <div className="absolute bottom-[10%] right-[10%] w-[40rem] h-[40rem] bg-neon-cyan/10 rounded-full blur-[160px] animate-pulse" />
                 </motion.div>
-            </section>
 
-            {/* 2. CHANNEL STATS SECTION */}
-            <section className="py-24 relative z-10">
-                <div className="container mx-auto px-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <StatItem label="Subscribers" value={250} suffix="K+" delay={0.1} />
-                        <StatItem label="Total Views" value={14} suffix="M+" delay={0.2} />
-                        <StatItem label="Videos Uploaded" value={186} delay={0.3} />
-                        <StatItem label="Years Active" value={3} delay={0.4} />
-                    </div>
-                </div>
-            </section>
-
-            {/* 3. LATEST VIDEOS SECTION */}
-            <section className="py-24 bg-gradient-to-b from-dark-bg to-black relative z-10">
-                <div className="container mx-auto px-6">
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-                        <motion.div
-                            initial={{ opacity: 0, x: -50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true, margin: "-100px" }}
-                        >
-                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4">
-                                LATEST <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-blue-500">DROPS</span>
-                            </h2>
-                            <p className="text-gray-400 text-xl max-w-xl">Fresh content straight from the studio. You won't want to miss these.</p>
-                        </motion.div>
-                        <motion.a
-                            initial={{ opacity: 0, x: 50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true, margin: "-100px" }}
-                            href="/posts"
-                            className="flex items-center gap-2 text-neon-cyan font-bold hover:text-white transition-colors group"
-                        >
-                            View All Videos
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-                        </motion.a>
-                    </div>
-
-                    {loading ? (
-                        <div className="flex justify-center py-20">
-                            <div className="w-12 h-12 border-4 border-neon-purple border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {latestVideos.map((video, idx) => (
-                                <motion.div
-                                    key={video.id}
-                                    initial={{ opacity: 0, y: 50 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true, margin: "-50px" }}
-                                    transition={{ delay: idx * 0.15, duration: 0.6 }}
-                                    className="group relative rounded-3xl overflow-hidden bg-black border border-white/10 hover:border-neon-purple/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(176,38,255,0.2)] cursor-pointer"
-                                >
-                                    <div className="aspect-video overflow-hidden relative">
-                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10" />
-                                        <img
-                                            src={getThumbnail(video)}
-                                            alt={video.title}
-                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
-                                        />
-                                        {/* Play Button Overlay */}
-                                        <div className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-50 group-hover:scale-100">
-                                            <div className="w-16 h-16 rounded-full bg-neon-purple/90 backdrop-blur-sm flex items-center justify-center shadow-[0_0_30px_rgba(176,38,255,0.8)]">
-                                                <Play className="w-8 h-8 fill-white translate-x-1" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="p-8">
-                                        <div className="flex items-center gap-3 mb-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            <span className="flex items-center gap-1 text-neon-cyan"><Star className="w-4 h-4" /> Featured</span>
-                                            <span>•</span>
-                                            <span>{new Date(video.createdAt || Date.now()).toLocaleDateString()}</span>
-                                        </div>
-                                        <h3 className="text-2xl font-bold text-white mb-3 line-clamp-2 group-hover:text-neon-cyan transition-colors">{video.title}</h3>
-                                        <p className="text-gray-400 line-clamp-2">{video.description || video.content || 'Check out our latest amazing video and hit that like button!'}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            {/* 4. TRENDING / MOST WATCHED (Slider format using flex-overflow) */}
-            <section className="py-24 relative overflow-hidden z-10">
-                <div className="absolute top-1/2 left-0 w-full h-px bg-white/5 -z-10" />
-                <div className="container mx-auto px-6 mb-12">
-                    <motion.h2
+                <div className="container relative z-30 mx-auto max-w-6xl text-center">
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        className="text-4xl md:text-5xl font-black text-center text-white uppercase tracking-wider"
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                     >
-                        Trending On <span className="text-neon-purple">YouTube</span>
-                    </motion.h2>
+                        <motion.span
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="inline-block px-5 py-2 rounded-full border border-white/5 bg-white/5 backdrop-blur-3xl text-neon-cyan text-[10px] font-black tracking-[0.4em] uppercase mb-12"
+                        >
+                            The Future of Visual Storytelling
+                        </motion.span>
+                        <h1
+                            className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-black mb-12 leading-[0.9] tracking-tighter text-white mx-auto uppercase"
+                            dangerouslySetInnerHTML={{ __html: hero.title }}
+                        />
+                        <p className="text-xl sm:text-2xl text-gray-400 max-w-2xl mx-auto mb-16 font-light leading-relaxed">
+                            {hero.subtitle}
+                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row justify-center gap-8 items-center">
+                            <Magnetic>
+                                <a 
+                                    href="https://www.youtube.com/@advisionstudio" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="btn-primary group flex items-center gap-3"
+                                    data-cursor="WATCH"
+                                >
+                                    <Youtube size={18} /> Watch Channel
+                                </a>
+                            </Magnetic>
+                            <Magnetic>
+                                <a 
+                                    href="/projects" 
+                                    className="btn-secondary group flex items-center gap-3"
+                                    data-cursor="PROJECTS"
+                                >
+                                    Our Portfolio <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                </a>
+                            </Magnetic>
+                        </div>
+                    </motion.div>
                 </div>
-
-                {/* Horizontal Scrolling Track */}
-                <div className="w-full overflow-x-auto pb-12 hide-scrollbar ps-6 lg:ps-[calc((100vw-1200px)/2)] pr-6">
-                    <div className="flex gap-6 w-max">
-                        {[1, 2, 3, 4, 5].map((item, idx) => (
-                            <motion.div
-                                key={item}
-                                initial={{ opacity: 0, x: 100 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true, margin: "0px -100px 0px 0px" }}
-                                transition={{ delay: idx * 0.1, duration: 0.6 }}
-                                className="w-[300px] sm:w-[400px] shrink-0 group cursor-pointer"
-                            >
-                                <div className="relative rounded-2xl overflow-hidden aspect-[9/16] sm:aspect-video border border-white/10 group-hover:border-neon-cyan/50 transition-all duration-300">
-                                    <img
-                                        src={`https://images.unsplash.com/photo-${1500000000000 + item}?w=600&q=80`}
-                                        alt={`Trending ${item}`}
-                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80" />
-                                    <div className="absolute bottom-0 left-0 w-full p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white font-black text-xs">#{item}</span>
-                                            <span className="text-red-500 font-bold text-sm uppercase tracking-wider">Trending</span>
-                                        </div>
-                                        <h3 className="text-xl font-bold text-white">Viral Challenge Recap #{item}</h3>
-                                    </div>
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">
-                                        <Youtube className="w-8 h-8 text-white" />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                
+                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce opacity-20 hidden md:block">
+                    <div className="w-px h-16 bg-gradient-to-b from-white to-transparent" />
                 </div>
             </section>
 
-            {/* 5. COMMUNITY SECTION */}
-            <section className="py-24 bg-black relative z-10 border-y border-white/5">
-                <div className="container mx-auto px-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                        <motion.div
-                            initial={{ opacity: 0, x: -50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                        >
-                            <h2 className="text-4xl md:text-6xl font-black text-white mb-6 uppercase">
-                                Our Mad <br /><span className="text-neon-cyan">Community</span>
+            {/* Bento Experience Section */}
+            <section className="py-32 px-6 relative z-10">
+                <div className="container mx-auto max-w-6xl">
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+                        <div className="space-y-4">
+                            <span className="text-neon-cyan text-[10px] font-black tracking-[0.4em] uppercase">The Visionary Grid</span>
+                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
+                                Crafted <span className="neon-text">Precision</span>
                             </h2>
-                            <p className="text-gray-400 text-lg mb-10 leading-relaxed">
-                                Join hundreds of thousands of fans from around the globe. We read your comments, react to your wild ideas, and sometimes even fly you out to be in videos!
-                            </p>
+                        </div>
+                    </div>
 
-                            <div className="flex gap-4">
-                                <a href="#" className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#FF0000]/20 hover:border-[#FF0000] hover:text-[#FF0000] transition-colors group">
-                                    <Youtube className="w-6 h-6 text-gray-400 group-hover:text-[#FF0000]" />
-                                </a>
-                                <a href="#" className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-neon-purple/20 hover:border-neon-purple hover:text-neon-purple transition-colors group">
-                                    <ExternalLink className="w-6 h-6 text-gray-400 group-hover:text-neon-purple" />
-                                </a>
+                    <div className="bento-grid">
+                        {/* Featured High-Level Stat */}
+                        <BentoItem span="md:col-span-2 lg:col-span-4" className="min-h-[300px] p-10 flex flex-col justify-between">
+                            <div className="w-12 h-12 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple mb-8">
+                                <Zap size={24} />
                             </div>
-                        </motion.div>
+                            <div>
+                                <h3 className="text-5xl font-black text-white mb-2">{stats[0]?.value}</h3>
+                                <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-bold">{stats[0]?.label}</p>
+                            </div>
+                        </BentoItem>
 
-                        {/* Floating Comments */}
-                        <div className="relative h-[400px] w-full mt-10 lg:mt-0">
-                            {[
-                                { t: "Bro this video had me dead 💀💀", user: "@gamingninja", style: "top-0 left-0 lg:-left-10" },
-                                { t: "I've been subbed since day 1. Best evolution ever.", user: "@og_fan_99", style: "top-1/4 right-0 lg:-right-10" },
-                                { t: "Wait did he actually jump out of the plane?! 🔥", user: "@adrenalinejunkie", style: "bottom-1/3 left-10" },
-                                { t: "Another banger alert 🚨", user: "@musicmaker", style: "bottom-0 right-10" }
-                            ].map((comment, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                                    viewport={{ once: true, margin: "-50px" }}
-                                    transition={{ delay: i * 0.2, duration: 0.5 }}
-                                    className={`absolute ${comment.style} p-4 md:p-6 rounded-2xl bg-dark-bg border border-white/10 shadow-xl max-w-xs backdrop-blur-md hover:border-neon-cyan/50 hover:z-10 transition-colors cursor-default`}
-                                >
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-neon-purple to-neon-cyan" />
-                                        <span className="text-gray-300 font-bold text-sm">{comment.user}</span>
+                        {/* Recent Stories Bento Tiles */}
+                        {latestPosts.map((post, idx) => (
+                            <BentoItem 
+                                key={post.id} 
+                                span={idx === 0 ? "md:col-span-2 lg:col-span-8" : "md:col-span-2 lg:col-span-4"} 
+                                className="min-h-[400px] group cursor-pointer"
+                                data-cursor="PLAY"
+                            >
+                                <div className="absolute inset-0 w-full h-full overflow-hidden" onClick={() => handleVideoClick(post.videoUrl)}>
+                                    <img 
+                                        src={post.imageUrl || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80"} 
+                                        alt={post.title}
+                                        className="w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000 grayscale group-hover:grayscale-0"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                                        <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center text-white scale-75 group-hover:scale-100 transition-transform duration-500">
+                                            <PlayCircle size={40} />
+                                        </div>
                                     </div>
-                                    <p className="text-white font-medium text-sm md:text-base">{comment.t}</p>
-                                    <div className="flex gap-4 mt-3 opacity-50">
-                                        <Heart className="w-4 h-4 cursor-pointer hover:text-red-500" />
-                                        <MessageSquare className="w-4 h-4 cursor-pointer" />
+                                </div>
+                                <div className="absolute bottom-0 left-0 p-10 w-full pointer-events-none">
+                                    <div className="flex items-center gap-3 text-[10px] font-black text-neon-cyan uppercase tracking-widest mb-3">
+                                        <Star size={12} /> Featured
                                     </div>
-                                </motion.div>
-                            ))}
-                        </div>
+                                    <h3 className="text-2xl md:text-3xl font-black text-white leading-tight mb-4 group-hover:text-neon-cyan transition-colors">
+                                        {post.title}
+                                    </h3>
+                                    <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
+                                        <Calendar size={14} /> {new Date(post.createdAt).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </BentoItem>
+                        ))}
+
+                        {/* Additional Stats Tiles */}
+                        <BentoItem span="md:col-span-2 lg:col-span-4" className="p-10 flex flex-col justify-center text-center">
+                            <h3 className="text-5xl font-black text-white mb-2">{stats[1]?.value}</h3>
+                            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-bold">{stats[1]?.label}</p>
+                        </BentoItem>
+
+                        <BentoItem span="md:col-span-2 lg:col-span-4" className="p-10 flex flex-col justify-center text-center border-neon-cyan/20">
+                            <h3 className="text-5xl font-black text-neon-cyan mb-2">{stats[2]?.value}</h3>
+                            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-bold">{stats[2]?.label}</p>
+                        </BentoItem>
+
+                        <BentoItem span="md:col-span-2 lg:col-span-4" className="p-10 flex items-center justify-center bg-white group hover:bg-neon-cyan transition-colors duration-500">
+                            <Link 
+                                to="/posts" 
+                                className="flex items-center gap-4 text-black font-black uppercase tracking-[0.3em] text-xs"
+                                data-cursor="EXPLORE"
+                            >
+                                Global Stories <Globe size={18} />
+                            </Link>
+                        </BentoItem>
                     </div>
                 </div>
             </section>
 
-            {/* 6. NEWSLETTER / JOIN THE FUN */}
-            <section className="py-24 relative z-10">
-                <div className="container mx-auto px-6 max-w-4xl text-center">
+            {/* About Section - Redesigned */}
+            <AboutSection />
+
+            {/* Video Modal Overlay */}
+            <AnimatePresence>
+                {activeVideo && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        className="p-10 md:p-16 rounded-[40px] bg-gradient-to-br from-neon-purple/20 via-black to-neon-cyan/20 border border-white/10 relative overflow-hidden group"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-6 md:p-12"
+                        onClick={() => setActiveVideo(null)}
                     >
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-0" />
-
-                        <div className="relative z-10">
-                            <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Never Miss A Beat</h2>
-                            <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">Get exclusive behind-the-scenes content, early access to merch drops, and updates on our wildest ideas straight to your inbox.</p>
-
-                            <form className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto" onSubmit={(e) => e.preventDefault()}>
-                                <div className="relative flex-1">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                    <input
-                                        type="email"
-                                        placeholder="Enter your email address"
-                                        className="w-full pl-12 pr-4 py-4 rounded-full bg-black/50 border border-white/20 text-white focus:outline-none focus:border-neon-cyan transition-colors"
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className="px-8 py-4 bg-white text-black font-black uppercase tracking-wider rounded-full hover:bg-neon-cyan transition-colors duration-300 shadow-lg shadow-white/10 hover:shadow-neon-cyan/20 transform active:scale-95">
-                                    Join the cult
-                                </button>
-                            </form>
-                        </div>
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative w-full max-w-6xl aspect-video glass-modern p-1 rounded-[3rem] overflow-hidden"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button
+                                onClick={() => setActiveVideo(null)}
+                                className="absolute top-8 right-8 w-14 h-14 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition-all z-20"
+                            >
+                                <X size={32} />
+                            </button>
+                            <iframe
+                                className="w-full h-full rounded-[2.8rem]"
+                                src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`}
+                                title="Visual Experience"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </motion.div>
                     </motion.div>
-                </div>
-            </section>
-
-            {/* 7. STRONG FINAL CTA */}
-            <section className="py-32 bg-neon-purple relative overflow-hidden z-10 flex items-center justify-center">
-                {/* Background animations */}
-                <div className="absolute inset-0 z-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBoNDBNNDAgMHY0MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')] animate-[pulse_4s_ease-in-out_infinite]" />
-                <div className="absolute -left-32 -bottom-32 w-96 h-96 bg-black opacity-30 rounded-full blur-[100px]" />
-                <div className="absolute -right-32 -top-32 w-96 h-96 bg-white opacity-20 rounded-full blur-[100px]" />
-
-                <div className="container relative z-10 mx-auto px-6 text-center">
-                    <motion.h2
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true, margin: "-100px" }}
-                        transition={{ duration: 0.6, type: "spring", bounce: 0.5 }}
-                        className="text-5xl md:text-8xl font-black text-white tracking-tighter uppercase mb-10 drop-shadow-2xl"
-                    >
-                        Are you not <br />
-                        <span className="text-black italic bg-white px-4 py-0 leading-tight inline-block transform -rotate-2">ENTERTAINED?</span>
-                    </motion.h2>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.3 }}
-                    >
-                        <a href="https://youtube.com/@advisionstudio" target="_blank" rel="noopener noreferrer" className="group relative inline-flex items-center justify-center px-12 py-6 bg-black text-white text-xl md:text-2xl font-black uppercase tracking-widest rounded-full overflow-hidden transition-transform duration-300 hover:scale-105 active:scale-95 shadow-2xl">
-                            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-                            <Youtube className="w-8 h-8 mr-4 text-red-600 group-hover:scale-125 transition-transform" />
-                            SUBSCRIBE NOW
-                        </a>
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* Global style fixes for the hide-scrollbar utility */}
-            <style jsx>{`
-                .hide-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .hide-scrollbar {
-                    -ms-overflow-style: none;  /* IE and Edge */
-                    scrollbar-width: none;  /* Firefox */
-                }
-            `}</style>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
 
+const AboutSection = () => {
+    const [about, setAbout] = useState(null);
+
+    useEffect(() => {
+        const fetchAbout = async () => {
+            try {
+                const res = await api.get('/public/about');
+                setAbout(res.data);
+            } catch (err) {
+                console.error("About fetch error:", err);
+            }
+        };
+        fetchAbout();
+    }, []);
+
+    if (!about) return null;
+
+    return (
+        <section className="relative py-32 overflow-hidden z-10">
+            <div className="container mx-auto px-6 max-w-6xl">
+                <div className="flex flex-col lg:flex-row items-center gap-24">
+                    <motion.div
+                        initial={{ opacity: 0, x: -50 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        className="lg:w-1/2 relative"
+                    >
+                        <div 
+                            className="relative z-10 rounded-[4rem] overflow-hidden border border-white/5 shadow-2xl skew-y-3 hover:skew-y-0 transition-transform duration-1000 group"
+                            data-cursor="STUDIO"
+                        >
+                            <img
+                                src={about.imageUrl || "https://images.unsplash.com/photo-1492691523569-44058d45e3ea?auto=format&fit=crop&q=80"}
+                                alt="Studio"
+                                className="w-full h-[600px] object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
+                            />
+                        </div>
+                        <div className="absolute -top-20 -left-20 w-[30rem] h-[30rem] bg-neon-purple/20 rounded-full blur-[120px] -z-10" />
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, x: 50 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        className="lg:w-1/2 space-y-12"
+                    >
+                        <div className="space-y-6">
+                            <span className="text-neon-cyan text-[10px] font-black tracking-[0.5em] uppercase">The Architect</span>
+                            <h2 className="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter">
+                                {about.title} <span className="text-neon-purple">_</span>
+                            </h2>
+                            <p className="text-neon-purple text-2xl font-bold italic tracking-tight">{about.subtitle}</p>
+                        </div>
+                        <p className="text-gray-400 text-xl font-light leading-relaxed">
+                            {about.description}
+                        </p>
+                        <div className="flex items-center gap-12">
+                            <div className="space-y-2">
+                                <p className="text-6xl font-black text-white">{about.experienceYears}+</p>
+                                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">Years Crafting</p>
+                            </div>
+                            <div className="w-px h-16 bg-white/10" />
+                            <div className="space-y-2">
+                                <p className="text-6xl font-black text-neon-cyan">100%</p>
+                                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">Infinite Vision</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
 export default Home;
+

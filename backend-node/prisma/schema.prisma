@@ -42,3 +42,37 @@ model HomeSection {
   sectionName String   @unique
   content     String
 }
+
+model About {
+  id              Int      @id @default(autoincrement())
+  title           String   @default("About AdVision")
+  subtitle        String   @default("Our Creative Journey")
+  description     String   @default("Describe your studio journey here...")
+  imageUrl        String?
+  experienceYears Int      @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model Story {
+  id          Int       @id @default(autoincrement())
+  title       String
+  summary     String
+  genre       String
+  coverUrl    String?
+  author      String    @default("Anonymous")
+  status      String    @default("Ongoing")
+  featured    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  chapters    Chapter[]
+}
+
+model Chapter {
+  id          Int      @id @default(autoincrement())
+  storyId     Int
+  title       String
+  content     String
+  chapterNo   Int
+  createdAt   DateTime @default(now())
+  story       Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+}
