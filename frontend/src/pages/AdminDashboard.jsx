@@ -10,21 +10,25 @@ import PostForm from '../components/admin/PostForm';
 import ProjectForm from '../components/admin/ProjectForm';
 import HomeSettings from '../components/admin/HomeSettings';
 import AboutSettings from '../components/admin/AboutSettings';
-import StoryForm from '../components/admin/StoryForm';
-import ChapterManager from '../components/admin/ChapterManager';
-import { FileText, Briefcase, Plus, BookOpen, Layers, Wifi, WifiOff, AlertCircle, RefreshCw, Activity, Terminal, Shield } from 'lucide-react';
+import ProjectsSettings from '../components/admin/ProjectsSettings';
+import ContactSettings from '../components/admin/ContactSettings';
+import ContactMessages from '../components/admin/ContactMessages';
+import AccountSettings from '../components/admin/AccountSettings';
+import { FileText, Briefcase, Plus, BookOpen, Layers, Wifi, WifiOff, AlertCircle, RefreshCw, Activity, Terminal, Shield, Settings } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
-    const { user, logout, loading } = useAuth();
+    const { user, logout, loading, updateUser } = useAuth();
     const navigate = useNavigate();
 
     // State
     const [activeTab, setActiveTab] = useState('overview');
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [projectCategoryFilter, setProjectCategoryFilter] = useState('All');
     const [items, setItems] = useState([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
-    const [stats, setStats] = useState({ posts: 0, projects: 0, stories: 0 });
-    const [activeStoryForChapters, setActiveStoryForChapters] = useState(null);
+    const [stats, setStats] = useState({ posts: 0, projects: 0 });
     
     // Connection State
     const [connectionStatus, setConnectionStatus] = useState('checking'); // checking | online | offline
@@ -61,21 +65,18 @@ const AdminDashboard = () => {
 
         try {
             if (activeTab === 'overview') {
-                const [postsRes, projectsRes, storiesRes] = await Promise.all([
+                const [postsRes, projectsRes] = await Promise.all([
                     api.get('/public/posts'),
-                    api.get('/public/projects'),
-                    api.get('/public/stories')
+                    api.get('/public/projects')
                 ]);
                 setStats({
                     posts: postsRes.data.length,
-                    projects: projectsRes.data.length,
-                    stories: storiesRes.data.length
+                    projects: projectsRes.data.length
                 });
             } else {
                 let res;
                 if (activeTab === 'posts') res = await api.get('/public/posts');
                 else if (activeTab === 'projects') res = await api.get('/public/projects');
-                else if (activeTab === 'stories') res = await api.get('/public/stories');
                 
                 if (res) setItems(res.data);
             }
@@ -89,7 +90,6 @@ const AdminDashboard = () => {
         fetchData();
         setIsFormOpen(false);
         setEditingItem(null);
-        setActiveStoryForChapters(null);
     }, [activeTab, user]);
 
     // Handlers
@@ -101,14 +101,14 @@ const AdminDashboard = () => {
             let endpoint;
             if (activeTab === 'posts') endpoint = `/admin/posts/${deleteNode.id}`;
             else if (activeTab === 'projects') endpoint = `/admin/projects/${deleteNode.id}`;
-            else if (activeTab === 'stories') endpoint = `/admin/stories/${deleteNode.id}`;
             
             await api.delete(endpoint);
             setDeleteNode(null);
+            toast.success("Item deleted successfully");
             fetchData();
         } catch (err) {
             console.error("Delete failed:", err);
-            alert("Failed to delete item. " + (err.response?.data?.error || err.message));
+            toast.error("Failed to delete item. " + (err.response?.data?.error || err.message));
         }
     };
 
@@ -127,7 +127,6 @@ const AdminDashboard = () => {
             let endpoint;
             if (activeTab === 'posts') endpoint = '/admin/posts';
             else if (activeTab === 'projects') endpoint = '/admin/projects';
-            else if (activeTab === 'stories') endpoint = '/admin/stories';
 
             if (editingItem) {
                 await api.put(`${endpoint}/${editingItem.id}`, formData);
@@ -136,10 +135,11 @@ const AdminDashboard = () => {
             }
 
             setIsFormOpen(false);
+            toast.success(editingItem ? "Item updated successfully" : "Item created successfully");
             fetchData();
         } catch (err) {
             console.error("Operation failed:", err);
-            alert("Failed to save item. " + (err.response?.data?.error || err.message));
+            toast.error("Failed to save item. " + (err.response?.data?.error || err.message));
         }
     };
 
@@ -160,20 +160,10 @@ const AdminDashboard = () => {
                 </span>
             )
         },
+        { header: 'Category', accessor: 'category', render: (item) => <span className="text-gray-400 text-xs font-medium">{item.category}</span> }
     ];
 
-    const storyColumns = [
-        { header: 'Title', accessor: 'title' },
-        { header: 'Genre', accessor: 'genre' },
-        { header: 'Chapters', accessor: 'chapters', render: (item) => (
-            <button 
-                onClick={(e) => { e.stopPropagation(); setActiveStoryForChapters(item); }}
-                className="flex items-center gap-2 bg-neon-purple/10 text-neon-purple px-4 py-2 rounded-2xl font-black text-[9px] uppercase tracking-[0.2em] hover:bg-neon-purple/20 transition-all border border-neon-purple/20"
-            >
-                <Layers size={14} /> Manage ({item._count?.chapters || 0})
-            </button>
-        )},
-    ];
+
 
     if (loading || !user) return (
         <div className="min-h-screen bg-dark-bg flex items-center justify-center">
@@ -187,9 +177,9 @@ const AdminDashboard = () => {
 
     return (
         <div className="min-h-screen bg-dark-bg text-gray-200 font-sans flex flex-col lg:flex-row overflow-hidden">
-            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={logout} />
+            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={logout} isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 
-            <main className="flex-1 lg:ml-72 p-6 md:p-10 pt-28 lg:pt-10 h-screen overflow-y-auto custom-scrollbar no-scrollbar">
+            <main className={`flex-1 ${isSidebarCollapsed ? 'lg:ml-24' : 'lg:ml-72'} p-6 md:p-10 pt-28 lg:pt-10 h-screen overflow-y-auto custom-scrollbar no-scrollbar transition-all duration-500`}>
                 <div className="max-w-7xl mx-auto space-y-12 pb-20">
 
                     {/* Header Section */}
@@ -220,7 +210,7 @@ const AdminDashboard = () => {
                                 <span className="text-[8px] font-bold uppercase tracking-[0.3em] text-gray-600">Local Auth Protocol 2.4</span>
                             </div>
 
-                            {(activeTab === 'posts' || activeTab === 'projects' || activeTab === 'stories') && !isFormOpen && !activeStoryForChapters && (
+                            {(activeTab === 'posts' || activeTab === 'projects') && !isFormOpen && (
                                 <button
                                     onClick={handleCreate}
                                     className="group flex items-center gap-4 bg-white text-black px-8 py-5 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.3em] hover:bg-neon-cyan transition-all duration-500 shadow-[0_20px_40px_rgba(255,255,255,0.05)] hover:shadow-[0_20px_40px_rgba(0,255,255,0.2)]"
@@ -274,11 +264,8 @@ const AdminDashboard = () => {
                                         <div className="md:col-span-4 lg:col-span-4 h-full">
                                             <StatsCard title="Primary Records" value={stats.posts} icon={FileText} color="text-neon-purple" />
                                         </div>
-                                        <div className="md:col-span-4 lg:col-span-4 h-full">
+                                        <div className="md:col-span-8 lg:col-span-8 h-full">
                                             <StatsCard title="Vision Assets" value={stats.projects} icon={Briefcase} color="text-neon-cyan" />
-                                        </div>
-                                        <div className="md:col-span-4 lg:col-span-4 h-full">
-                                            <StatsCard title="Narrative Streams" value={stats.stories} icon={BookOpen} color="text-white" />
                                         </div>
                                         
                                         {/* Dashboard Secondary Node */}
@@ -343,11 +330,30 @@ const AdminDashboard = () => {
                                     </div>
                                 )}
 
-                                {activeTab === 'stories' && activeStoryForChapters ? (
+                                {activeTab === 'projectsPage' && (
                                     <div className="bento-item p-10">
-                                        <ChapterManager story={activeStoryForChapters} onBack={() => { setActiveStoryForChapters(null); fetchData(); }} />
+                                        <ProjectsSettings />
                                     </div>
-                                ) : (activeTab === 'posts' || activeTab === 'projects' || activeTab === 'stories') && (
+                                )}
+
+                                {activeTab === 'contact' && (
+                                    <div className="space-y-6">
+                                        <div className="bento-item p-10">
+                                            <ContactSettings />
+                                        </div>
+                                        <div className="bento-item p-10">
+                                            <ContactMessages />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'account' && (
+                                    <div className="bento-item p-10">
+                                        <AccountSettings user={user} onUpdated={updateUser} />
+                                    </div>
+                                )}
+
+                                {activeTab === 'posts' || activeTab === 'projects' ? (
                                     <div className="bento-item overflow-hidden">
                                         {isFormOpen ? (
                                             <div className="p-10">
@@ -359,22 +365,35 @@ const AdminDashboard = () => {
                                                 </div>
                                                 {activeTab === 'posts' ? (
                                                     <PostForm initialData={editingItem} onSubmit={handleFormSubmit} onCancel={() => setIsFormOpen(false)} />
-                                                ) : activeTab === 'projects' ? (
-                                                    <ProjectForm initialData={editingItem} onSubmit={handleFormSubmit} onCancel={() => setIsFormOpen(false)} />
                                                 ) : (
-                                                    <StoryForm initialData={editingItem} onSubmit={handleFormSubmit} onCancel={() => setIsFormOpen(false)} />
+                                                    <ProjectForm initialData={editingItem} onSubmit={handleFormSubmit} onCancel={() => setIsFormOpen(false)} />
                                                 )}
                                             </div>
                                         ) : (
-                                            <DataTable
-                                                columns={activeTab === 'posts' ? postColumns : activeTab === 'projects' ? projectColumns : storyColumns}
-                                                data={items}
-                                                onEdit={handleEdit}
-                                                onDelete={(id) => setDeleteNode({ id })}
-                                            />
+                                            <div className="flex flex-col gap-6">
+                                                {activeTab === 'projects' && (
+                                                    <div className="flex items-center gap-2 px-10 pt-10">
+                                                        {['All', 'AdVision', 'Qubit', 'Future Projects'].map(cat => (
+                                                            <button
+                                                                key={cat}
+                                                                onClick={() => setProjectCategoryFilter(cat)}
+                                                                className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${projectCategoryFilter === cat ? 'bg-white text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                                                            >
+                                                                {cat}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <DataTable
+                                                    columns={activeTab === 'posts' ? postColumns : projectColumns}
+                                                    data={activeTab === 'projects' && projectCategoryFilter !== 'All' ? items.filter(i => i.category === projectCategoryFilter) : items}
+                                                    onEdit={handleEdit}
+                                                    onDelete={(id) => setDeleteNode({ id })}
+                                                />
+                                            </div>
                                         )}
                                     </div>
-                                )}
+                                ) : null}
                             </motion.div>
                         </AnimatePresence>
                     </div>

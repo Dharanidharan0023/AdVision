@@ -1,22 +1,37 @@
 import { useState, useEffect } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
+import { Loader2 } from 'lucide-react';
 
 const PostForm = ({ initialData, onSubmit, onCancel }) => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
+        slug: '',
+        category: '',
+        tags: '',
         content: '',
         imageUrl: '',
         videoUrl: '',
         featured: false,
+        status: 'Published',
+        publishDate: new Date().toISOString().split('T')[0]
     });
 
     useEffect(() => {
         if (initialData) {
             setFormData({
                 title: initialData.title || '',
+                slug: initialData.slug || '',
+                category: initialData.category || '',
+                tags: initialData.tags || '',
                 content: initialData.content || '',
                 imageUrl: initialData.imageUrl || '',
                 videoUrl: initialData.videoUrl || '',
                 featured: initialData.featured || false,
+                status: initialData.status || 'Published',
+                publishDate: initialData.publishDate ? new Date(initialData.publishDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
             });
         }
     }, [initialData]);
@@ -29,9 +44,18 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleContentChange = (value) => {
+        setFormData(prev => ({ ...prev, content: value }));
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        setIsSubmitting(true);
+        try {
+            await onSubmit(formData);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -56,10 +80,81 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
                             type="text"
                             name="title"
                             value={formData.title}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                                handleChange(e);
+                                if (!initialData) {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+                                    }));
+                                }
+                            }}
                             placeholder="Descriptive title..."
                             className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
                             required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Slug</label>
+                        <input
+                            type="text"
+                            name="slug"
+                            value={formData.slug}
+                            onChange={handleChange}
+                            placeholder="post-url-slug"
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-purple/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Category</label>
+                        <input
+                            type="text"
+                            name="category"
+                            value={formData.category}
+                            onChange={handleChange}
+                            placeholder="Technology, Art..."
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Tags (comma separated)</label>
+                        <input
+                            type="text"
+                            name="tags"
+                            value={formData.tags}
+                            onChange={handleChange}
+                            placeholder="react, web, ui"
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Status</label>
+                        <select
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-purple/50 focus:bg-white/10 transition-all appearance-none cursor-pointer"
+                        >
+                            <option value="Draft">Draft</option>
+                            <option value="Published">Published</option>
+                        </select>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Publish Date</label>
+                        <input
+                            type="date"
+                            name="publishDate"
+                            value={formData.publishDate}
+                            onChange={handleChange}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all"
                         />
                     </div>
 
@@ -100,16 +195,15 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Narrative</label>
-                    <textarea
-                        name="content"
-                        value={formData.content}
-                        onChange={handleChange}
-                        rows={8}
-                        placeholder="Share the vision..."
-                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-purple/50 focus:bg-white/10 transition-all placeholder:text-gray-600 resize-none"
-                        required
-                    />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 mb-2 block">Narrative</label>
+                    <div className="rounded-2xl overflow-hidden border border-white/5 bg-white/5 text-white">
+                        <ReactQuill
+                            theme="snow"
+                            value={formData.content}
+                            onChange={handleContentChange}
+                            className="quill-editor"
+                        />
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-4 bg-white/5 border border-white/5 p-4 rounded-2xl w-fit">
@@ -127,9 +221,11 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
                 <div className="flex justify-end pt-8 border-t border-white/5">
                     <button
                         type="submit"
-                        className="btn-primary px-10 py-4 text-xs font-black uppercase tracking-widest"
+                        disabled={isSubmitting}
+                        className="btn-primary px-10 py-4 text-xs font-black uppercase tracking-widest flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {initialData ? 'Update Entity' : 'Finalize Broadcast'}
+                        {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                        {isSubmitting ? 'Processing...' : (initialData ? 'Update Entity' : 'Finalize Broadcast')}
                     </button>
                 </div>
             </form>

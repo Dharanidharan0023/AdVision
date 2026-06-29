@@ -20,7 +20,7 @@ const AdminLogin = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        const success = await login(username, password);
+        const success = await login(username.trim(), password.trim());
         if (success) {
             navigate('/dashboard');
         } else {

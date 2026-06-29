@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
 import { Calendar, User, PlayCircle, X, ExternalLink, Flame, ArrowUpRight, Zap } from 'lucide-react';
+import DOMPurify from 'dompurify';
+import SEO from '../components/SEO';
 import Magnetic from '../components/common/Magnetic';
 import BentoItem from '../components/common/BentoItem';
 
@@ -9,6 +11,8 @@ const Posts = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeVideo, setActiveVideo] = useState(null);
+    const [activePost, setActivePost] = useState(null);
+    const containerRef = useRef(null);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -45,9 +49,25 @@ const Posts = () => {
     );
 
     return (
-        <div className="min-h-screen pt-40 px-6 bg-dark-bg pb-32 overflow-hidden">
-            {/* Background Texture */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full bg-[radial-gradient(circle_at_50%_0%,rgba(176,38,255,0.05)_0%,transparent_70%)] -z-10" />
+        <div ref={containerRef} className="min-h-screen pt-40 px-6 bg-dark-bg pb-32 overflow-hidden relative">
+            <SEO 
+                title={activePost ? activePost.title : "Studio Feed"}
+                description={activePost ? activePost.content?.substring(0, 150).replace(/<[^>]+>/g, '') : "The Narrative Stream and Studio Feed."}
+                url="/posts"
+                type={activePost ? "article" : "website"}
+                structuredData={activePost ? {
+                    "@context": "https://schema.org",
+                    "@type": "Article",
+                    "headline": activePost.title,
+                    "datePublished": activePost.createdAt,
+                    "image": activePost.imageUrl || "https://advisionstudio.com/vite.svg"
+                } : null}
+            />
+            {/* Glassmorphic Background */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <div className="aurora-bg opacity-30" />
+                <div className="mesh-overlay opacity-50" />
+            </div>
             
             <div className="container mx-auto max-w-6xl">
                 <motion.div
@@ -145,7 +165,7 @@ const BentoPostCard = ({ post, index, onVideoClick }) => {
                     <img 
                         src={post.imageUrl} 
                         className="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60 group-hover:scale-110 transition-all duration-1000" 
-                        alt="" 
+                        alt={post.title} 
                     />
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-neon-cyan/5 via-transparent to-transparent" />

@@ -45,17 +45,19 @@ const CustomCursor = () => {
     }, [cursorX, cursorY]);
 
     return (
-        <div className="fixed inset-0 pointer-events-none z-[9999] md:block hidden">
+        <div className="fixed inset-0 pointer-events-none z-[9999] md:block hidden" style={{ position: 'fixed' }}>
             <motion.div
-                className="absolute top-0 left-0 flex items-center justify-center rounded-full border border-neon-cyan/50 mix-blend-difference"
+                className="fixed top-0 left-0 flex items-center justify-center rounded-full border border-neon-cyan/50 mix-blend-difference backdrop-blur-[2px] transition-all duration-300"
                 style={{
+                    position: 'fixed',
                     x: springX,
                     y: springY,
                     translateX: '-50%',
                     translateY: '-50%',
-                    width: cursorType === 'custom' ? 80 : cursorType === 'pointer' ? 40 : 20,
-                    height: cursorType === 'custom' ? 80 : cursorType === 'pointer' ? 40 : 20,
-                    backgroundColor: cursorType === 'custom' ? 'rgba(0, 255, 255, 0.1)' : 'transparent',
+                    width: cursorType === 'custom' ? 80 : cursorType === 'pointer' ? 60 : 20,
+                    height: cursorType === 'custom' ? 80 : cursorType === 'pointer' ? 60 : 20,
+                    backgroundColor: cursorType === 'custom' ? 'rgba(0, 255, 255, 0.1)' : cursorType === 'pointer' ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    scale: cursorType === 'pointer' ? 1.5 : 1
                 }}
             >
                 <AnimatePresence>
@@ -73,8 +75,9 @@ const CustomCursor = () => {
             </motion.div>
             
             <motion.div 
-                className="absolute top-0 left-0 w-1.5 h-1.5 bg-neon-cyan rounded-full shadow-[0_0_15px_rgba(0,255,255,1)]"
+                className="fixed top-0 left-0 w-1.5 h-1.5 bg-neon-cyan rounded-full shadow-[0_0_15px_rgba(0,255,255,1)]"
                 style={{
+                    position: 'fixed',
                     x: springX,
                     y: springY,
                     translateX: '-50%',

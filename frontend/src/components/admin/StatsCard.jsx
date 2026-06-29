@@ -7,7 +7,7 @@ const StatsCard = ({ title, value, icon: Icon, color = "text-neon-purple" }) => 
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             whileHover={{ y: -5 }}
-            className="glass-modern p-10 rounded-[2.5rem] border border-white/5 group transition-all duration-500 relative overflow-hidden h-full flex flex-col justify-between shadow-2xl"
+            className="glass-modern p-6 sm:p-10 rounded-[2.5rem] border border-white/5 group transition-all duration-500 relative overflow-hidden h-full flex flex-col justify-between shadow-2xl"
         >
             <div className={`absolute top-0 right-0 w-40 h-40 bg-current opacity-[0.02] blur-[80px] transform translate-x-10 -translate-y-10 group-hover:opacity-[0.08] transition-opacity duration-700 ${color}`} />
             

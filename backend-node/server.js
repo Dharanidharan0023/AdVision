@@ -4,14 +4,59 @@ const dotenv = require('dotenv');
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, 'public', 'uploads', 'apks');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer Config
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage });
 dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+// Security and Performance Middleware
+app.use(helmet({ crossOriginResourcePolicy: false })); // Allow cross-origin static file fetching (for APKs)
+app.use(compression()); // Compress responses
+
+// CORS Configuration
+const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:3000', 'http://localhost:5173'];
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+}));
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // limit each IP to 200 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.'
+});
+app.use('/api/', limiter);
+
 app.use(express.json());
+
+// Serve static files from the public/uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // --- Request Logger ---
 app.use((req, res, next) => {
@@ -149,6 +194,19 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
 });
 
 // --- Admin Routes (Protected) ---
+// APK Upload Route
+app.post('/api/admin/upload-apk', authenticateToken, upload.single('apk'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/apks/${req.file.filename}`;
+    res.json({ url: fileUrl });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upload file' });
+  }
+});
+
 app.post('/api/admin/posts', authenticateToken, async (req, res) => {
   try {
     let { title, content, imageUrl, videoUrl, featured } = req.body;

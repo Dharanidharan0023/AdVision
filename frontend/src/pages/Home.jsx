@@ -1,351 +1,473 @@
-import { motion, useScroll, useTransform, AnimatePresence, useSpring } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api from '../api/axios';
-import { PlayCircle, X, ChevronRight, Calendar, ArrowUpRight, Youtube, Star, Zap, Globe } from 'lucide-react';
-import Magnetic from '../components/common/Magnetic';
-import BentoItem from '../components/common/BentoItem';
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import SEO from "../components/SEO";
+import DOMPurify from 'dompurify';
+import profileImg from "../assets/profile.webp";
+import ytThumb from "../assets/YT1.webp";
+import api from "../api/axios";
+import Magnetic from "../components/common/Magnetic";
+
+
+import {
+    Play,
+    Youtube,
+    Instagram,
+    Twitter,
+    Sparkles,
+    ArrowRight,
+    ChevronDown,
+} from "lucide-react";
+
+const FeaturedVideoCard = ({ video, stripHtml }) => {
+    const cardRef = useRef(null);
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    const mouseXSpring = useSpring(x, { stiffness: 150, damping: 20 });
+    const mouseYSpring = useSpring(y, { stiffness: 150, damping: 20 });
+
+    const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
+    const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
+
+    const handleMouseMove = (e) => {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const xPct = mouseX / width - 0.5;
+        const yPct = mouseY / height - 0.5;
+        x.set(xPct);
+        y.set(yPct);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            ref={cardRef}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+            variants={{
+                hidden: { opacity: 0, y: 50 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 20 } }
+            }}
+            whileHover={{ scale: 1.02 }}
+            className="group bg-white/5 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-md hover:border-cyan-500/30 transition-colors duration-500 shadow-xl hover:shadow-[0_20px_50px_rgba(0,255,255,0.1)] relative"
+        >
+            {/* Glow Effect */}
+            <motion.div
+                className="absolute inset-0 z-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-xl"
+            />
+            
+            {/* Glossy Sweep Effect */}
+            <div className="absolute inset-0 -translate-x-[150%] skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:translate-x-[150%] transition-transform duration-1000 ease-in-out pointer-events-none z-20" />
+            
+            <div className="relative aspect-video overflow-hidden bg-gray-900 z-10" style={{ transform: "translateZ(30px)" }}>
+                <img
+                    src={video?.imageUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=600'}
+                    alt={video?.title ?? 'Featured video'}
+                    className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                />
+                {video?.videoUrl && (
+                    <a href={video.videoUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
+                        <motion.div
+                            whileHover={{ scale: 1.2 }}
+                            className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-[0_0_20px_rgba(255,0,0,0.5)]"
+                        >
+                            <Play fill="white" />
+                        </motion.div>
+                    </a>
+                )}
+            </div>
+            <div className="p-6 relative z-10" style={{ transform: "translateZ(20px)" }}>
+                <h3 className="text-2xl font-black mb-3 group-hover:text-cyan-400 transition line-clamp-2">
+                    {video?.title ?? 'Loading...'}
+                </h3>
+                <p className="text-gray-400 text-sm line-clamp-3">
+                    {video?.content ? stripHtml(video.content) : 'Featured content from the studio.'}
+                </p>
+            </div>
+        </motion.div>
+    );
+};
 
 const Home = () => {
     const containerRef = useRef(null);
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ["start start", "end start"]
-    });
-
-    const scaleX = useSpring(scrollYProgress, {
-        stiffness: 100,
-        damping: 30,
-        restDelta: 0.001
-    });
-
-    const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-    const heroOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
-
-    // Dynamic Content State
-    const [hero, setHero] = useState({
-        title: 'AdVision <br /> <span className="neon-text italic">Studio</span>',
+    const [heroData, setHeroData] = useState({
+        title: 'DHARANIX <span class="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent">Beyond Your vision</span>',
         subtitle: 'Creative storytelling through vision.'
     });
-    const [stats, setStats] = useState([
+    const [branding] = useState('DHARANIDHARAN\'S UNIVERSE');
+    const [statsData, setStatsData] = useState([
         { label: 'Subscribers', value: '1.09K+' },
         { label: 'Videos', value: '105' },
         { label: 'Views', value: '274K+' }
     ]);
-    const [latestPosts, setLatestPosts] = useState([]);
-    const [activeVideo, setActiveVideo] = useState(null);
+    const [featuredVideos, setFeaturedVideos] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const { scrollYProgress } = useScroll({
+        target: containerRef,
+        offset: ["start start", "end start"],
+    });
+
+    const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
     useEffect(() => {
         const fetchHomeContent = async () => {
+            setLoading(true);
             try {
-                const [heroRes, statsRes, postsRes] = await Promise.allSettled([
+                const [heroRes, statsRes, videosRes] = await Promise.allSettled([
                     api.get('/public/home-section/hero'),
                     api.get('/public/home-section/stats'),
-                    api.get('/public/posts')
+                    api.get('/public/featured-posts?limit=3')
                 ]);
 
                 if (heroRes.status === 'fulfilled' && heroRes.value.data) {
-                    try {
-                        const parsed = typeof heroRes.value.data.content === 'string'
-                            ? JSON.parse(heroRes.value.data.content)
-                            : heroRes.value.data.content;
-                        setHero(prev => ({ ...prev, ...parsed }));
-                    } catch (e) {
-                        console.error("Hero parse error:", e);
-                    }
+                    setHeroData(parseContent(heroRes.value.data.content, heroData));
                 }
+
                 if (statsRes.status === 'fulfilled' && statsRes.value.data) {
-                    try {
-                        const parsed = typeof statsRes.value.data.content === 'string'
-                            ? JSON.parse(statsRes.value.data.content)
-                            : statsRes.value.data.content;
-                        if (Array.isArray(parsed)) setStats(parsed);
-                    } catch (e) {
-                        console.error("Stats parse error:", e);
+                    const statsContent = parseContent(statsRes.value.data.content, []);
+                    if (Array.isArray(statsContent)) {
+                        setStatsData(statsContent);
                     }
                 }
-                if (postsRes.status === 'fulfilled' && postsRes.value.data) {
-                    setLatestPosts(postsRes.value.data.slice(0, 4));
+
+                if (videosRes.status === 'fulfilled' && Array.isArray(videosRes.value.data)) {
+                    setFeaturedVideos(videosRes.value.data);
                 }
             } catch (err) {
-                console.error("Error fetching home content:", err);
+                console.error('Error loading homepage content:', err);
+            } finally {
+                setLoading(false);
             }
         };
+
         fetchHomeContent();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleVideoClick = (videoUrl) => {
-        if (!videoUrl) return;
-        const videoIdMatch = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/)([\w-]{11}))/);
-        if (videoIdMatch && videoIdMatch[1]) {
-            setActiveVideo(videoIdMatch[1]);
-        } else {
-            window.open(videoUrl, '_blank');
+    const parseContent = (content, fallback) => {
+        if (content === undefined || content === null) return fallback;
+        if (typeof content === 'string') {
+            try {
+                return JSON.parse(content);
+            } catch {
+                return content;
+            }
         }
+        return content;
     };
 
+    const stripHtml = (html) => {
+        if (!html) return '';
+        const tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    };
+
+    const heroTitleMarkup = { __html: DOMPurify.sanitize(heroData.title || '') };
+
     return (
-        <div ref={containerRef} className="bg-dark-bg relative">
-            <motion.div className="scroll-progress" style={{ scaleX }} />
-            <div className="aurora-bg" />
+        <div
+            ref={containerRef}
+            className="bg-[#050816] min-h-screen text-white overflow-hidden relative"
+        >
+            <SEO 
+                title="Home"
+                description={heroData.subtitle || "Premium video production and digital experiences"}
+                url="/"
+                structuredData={{
+                    "@context": "https://schema.org",
+                    "@graph": [
+                        {
+                            "@type": "WebSite",
+                            "name": "AdVision Studio",
+                            "url": "https://advisionstudio.com/",
+                            "description": "Premium video production and digital experiences."
+                        },
+                        {
+                            "@type": "Organization",
+                            "name": "AdVision Studio",
+                            "url": "https://advisionstudio.com/",
+                            "logo": "https://advisionstudio.com/vite.svg"
+                        }
+                    ]
+                }}
+            />
+            {/* Base ambient lighting */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-[#050816] to-[#050816] pointer-events-none" />
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/20 blur-[120px] rounded-full animate-pulse -z-10" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500/20 blur-[120px] rounded-full animate-pulse -z-10" />
 
-            {/* Hero Section */}
-            <section className="relative h-screen flex items-center overflow-hidden px-6">
-                <motion.div 
-                    style={{ y: heroY, opacity: heroOpacity }}
-                    className="absolute inset-0 z-0"
-                >
-                    <div className="absolute top-[10%] left-[10%] w-[40rem] h-[40rem] bg-neon-purple/10 rounded-full blur-[160px] animate-pulse" />
-                    <div className="absolute bottom-[10%] right-[10%] w-[40rem] h-[40rem] bg-neon-cyan/10 rounded-full blur-[160px] animate-pulse" />
-                </motion.div>
+            <div className="absolute inset-0 opacity-20 -z-20">
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:60px_60px]" />
+            </div>
 
-                <div className="container relative z-30 mx-auto max-w-6xl text-center">
+            <div className="absolute inset-0 overflow-hidden -z-10">
+                {Array.from({ length: 25 }).map((_, index) => (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                        key={index}
+                        animate={{
+                            y: [0, -50, 0],
+                            opacity: [0.2, 1, 0.2],
+                            scale: [1, 1.8, 1],
+                        }}
+                        transition={{
+                            duration: 4 + index,
+                            repeat: Infinity,
+                        }}
+                        className="absolute w-1 h-1 bg-cyan-300 rounded-full"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                        }}
+                    />
+                ))}
+            </div>
+
+            <section className="relative min-h-screen flex items-center px-6 lg:px-12 max-w-7xl mx-auto pt-24 pb-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center w-full mt-10 lg:mt-0">
+                    <motion.div
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                            hidden: { opacity: 0 },
+                            visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+                        }}
                     >
-                        <motion.span
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="inline-block px-5 py-2 rounded-full border border-white/5 bg-white/5 backdrop-blur-3xl text-neon-cyan text-[10px] font-black tracking-[0.4em] uppercase mb-12"
-                        >
-                            The Future of Visual Storytelling
-                        </motion.span>
-                        <h1
-                            className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-black mb-12 leading-[0.9] tracking-tighter text-white mx-auto uppercase"
-                            dangerouslySetInnerHTML={{ __html: hero.title }}
+                        <motion.h1 variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight uppercase mb-6 mt-5" dangerouslySetInnerHTML={heroTitleMarkup} />
+
+                        <motion.p variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="text-lg md:text-xl text-cyan-400 tracking-[0.3em] uppercase font-black mb-6">
+                            {branding}
+                        </motion.p>
+
+                        <motion.h2 variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="text-xl md:text-2xl text-gray-300 tracking-[0.3em] uppercase mb-6">
+                            {heroData.subtitle}
+                        </motion.h2>
+
+                        <motion.p variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="text-gray-400 text-lg leading-relaxed max-w-xl mb-10">
+                            Discover cinematic storytelling, video craftsmanship, and immersive creative experiences built for modern audiences.
+                        </motion.p>
+
+                        <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                            {statsData.map((item, index) => (
+                                <motion.div 
+                                    whileHover={{ y: -5 }} 
+                                    key={index} 
+                                    className="relative overflow-hidden bg-white/5 border border-white/10 rounded-3xl p-6 text-center backdrop-blur-md shadow-lg group"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <p className="text-3xl font-black text-white mb-2 relative z-10">{item.value}</p>
+                                    <p className="text-sm uppercase tracking-[0.25em] text-gray-400 relative z-10">{item.label}</p>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+
+                        <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="flex flex-wrap gap-5">
+                            <Magnetic>
+                                <motion.a
+                                    href="https://youtube.com/@dharanixstudio?si=YuoczrWD_6GTHqPo"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(0,255,255,0.5)' }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="bg-cyan-400 text-black font-bold py-4 px-8 rounded-full uppercase tracking-widest flex items-center gap-3"
+                                >
+                                    <Youtube size={20} /> Watch Videos
+                                </motion.a>
+                            </Magnetic>
+                            <Magnetic>
+                                <motion.button
+                                    whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="border border-white/20 backdrop-blur-md py-4 px-8 rounded-full uppercase tracking-widest flex items-center gap-3 relative overflow-hidden group"
+                                >
+                                    <span className="relative z-10 flex items-center gap-3">Explore More <ArrowRight size={18} /></span>
+                                    <div className="absolute inset-0 bg-white/10 -translate-x-[150%] skew-x-12 group-hover:translate-x-[150%] transition-transform duration-700 ease-out" />
+                                </motion.button>
+                            </Magnetic>
+                        </motion.div>
+                    </motion.div>
+
+                    <motion.div
+                        style={{ y: heroY }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 1 }}
+                        className="relative flex items-center justify-center h-[650px] perspective-1000"
+                    >
+                        <motion.div
+                            animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+                            transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+                            className="absolute w-[280px] sm:w-[340px] h-[400px] sm:h-[470px] rounded-[2.5rem] bg-gradient-to-br from-cyan-500/20 to-purple-500/20 blur-[50px] mix-blend-screen"
                         />
-                        <p className="text-xl sm:text-2xl text-gray-400 max-w-2xl mx-auto mb-16 font-light leading-relaxed">
-                            {hero.subtitle}
-                        </p>
-                        
-                        <div className="flex flex-col sm:flex-row justify-center gap-8 items-center">
-                            <Magnetic>
-                                <a 
-                                    href="https://www.youtube.com/@advisionstudio" 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="btn-primary group flex items-center gap-3"
-                                    data-cursor="WATCH"
-                                >
-                                    <Youtube size={18} /> Watch Channel
-                                </a>
-                            </Magnetic>
-                            <Magnetic>
-                                <a 
-                                    href="/projects" 
-                                    className="btn-secondary group flex items-center gap-3"
-                                    data-cursor="PROJECTS"
-                                >
-                                    Our Portfolio <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                                </a>
-                            </Magnetic>
-                        </div>
+                        <motion.div
+                            whileHover={{ scale: 1.03, rotate: 1 }}
+                            className="relative z-20 w-[260px] sm:w-[320px] h-[380px] sm:h-[460px] rounded-[2.5rem] overflow-hidden border border-cyan-400/30 backdrop-blur-md shadow-[0_0_60px_rgba(0,255,255,0.25)]"
+                        >
+                            <img src={profileImg} alt="Dharanidharan" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                            <motion.div
+                                animate={{ y: [-5, 5, -5] }}
+                                transition={{ repeat: Infinity, duration: 4 }}
+                                className="absolute bottom-6 left-6 right-6 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4"
+                            >
+                                <p className="text-cyan-300 uppercase tracking-[0.3em] text-xs mb-2">Creative Director</p>
+                                <h3 className="text-2xl font-black">Dharanidharan</h3>
+                            </motion.div>
+                        </motion.div>
+                        <motion.div
+                            animate={{ y: [20, -20, 20] }}
+                            transition={{ repeat: Infinity, duration: 5 }}
+                            className="absolute -left-4 sm:-left-2 bottom-10 sm:bottom-16 w-32 sm:w-44 aspect-video rounded-2xl overflow-hidden border border-cyan-400/40 shadow-[0_0_25px_rgba(0,255,255,0.35)]"
+                        >
+                            <img src={ytThumb} alt="Video Preview" className="w-full h-full object-cover opacity-90" />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-14 h-14 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center">
+                                    <Play fill="white" size={20} />
+                                </div>
+                            </div>
+                        </motion.div>
+                        <motion.a
+                            href="https://youtube.com/@dharanixstudio"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            animate={{ y: [-10, 10, -10], rotate: [-5, 5, -5] }}
+                            transition={{ repeat: Infinity, duration: 4 }}
+                            className="absolute top-10 right-6 z-30"
+                        >
+                            <div className="w-20 h-20 rounded-3xl bg-red-600 flex items-center justify-center shadow-[0_0_40px_rgba(255,0,0,0.5)]">
+                                <Youtube size={36} />
+                            </div>
+                        </motion.a>
+                        <motion.a
+                            href="https://www.instagram.com/visionofad?igsh=YTJ1cjYxYjMxdXI5"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            animate={{ y: [10, -10, 10], rotate: [5, -5, 5] }}
+                            transition={{ repeat: Infinity, duration: 5 }}
+                            className="absolute top-36 right-9 z-30"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.5)]">
+                                <Instagram size={24} />
+                            </div>
+                        </motion.a>
                     </motion.div>
                 </div>
                 
-                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce opacity-20 hidden md:block">
-                    <div className="w-px h-16 bg-gradient-to-b from-white to-transparent" />
-                </div>
+                {/* Scroll Down Indicator */}
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5, duration: 1 }}
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
+                >
+                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-400">Discover</span>
+                    <motion.div 
+                        animate={{ y: [0, 8, 0] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                        className="text-cyan-400"
+                    >
+                        <ChevronDown size={20} strokeWidth={2.5} />
+                    </motion.div>
+                </motion.div>
+
             </section>
 
-            {/* Bento Experience Section */}
-            <section className="py-32 px-6 relative z-10">
-                <div className="container mx-auto max-w-6xl">
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-                        <div className="space-y-4">
-                            <span className="text-neon-cyan text-[10px] font-black tracking-[0.4em] uppercase">The Visionary Grid</span>
-                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">
-                                Crafted <span className="neon-text">Precision</span>
-                            </h2>
+
+
+            <section className="py-24 px-6 lg:px-12 max-w-7xl mx-auto">
+                <motion.h2
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.8 }}
+                    className="text-4xl font-black uppercase tracking-[0.3em] mb-14 text-center md:text-left"
+                >
+                    Featured Videos
+                </motion.h2>
+
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-50px" }}
+                    variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                            opacity: 1,
+                            transition: {
+                                staggerChildren: 0.2
+                            }
+                        }
+                    }}
+                    className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    {(loading ? Array.from({ length: 3 }) : featuredVideos).map((video, i) => (
+                        <FeaturedVideoCard key={video?.id ?? i} video={video} stripHtml={stripHtml} />
+                    ))}
+                </motion.div>
+            </section>
+
+            <footer className="relative mt-20 border-t border-white/10 bg-gradient-to-b from-transparent to-white/[0.02]">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+                <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col lg:flex-row items-center justify-between gap-8">
+                    <div className="flex items-center gap-5">
+                        <Magnetic>
+                            <motion.a
+                                whileHover={{ scale: 1.2, rotate: 5, backgroundColor: 'rgba(255,0,0,0.2)' }}
+                                href="https://youtube.com/@dharanixstudio?si=YuoczrWD_6GTHqPo"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:text-red-500 transition-colors"
+                            >
+                                <Youtube size={22} />
+                            </motion.a>
+                        </Magnetic>
+                        <Magnetic>
+                            <motion.a
+                                whileHover={{ scale: 1.2, rotate: -5, backgroundColor: 'rgba(236,72,153,0.2)' }}
+                                href="https://www.instagram.com/visionofad?igsh=YTJ1cjYxYjMxdXI5"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:text-pink-500 transition-colors"
+                            >
+                                <Instagram size={22} />
+                            </motion.a>
+                        </Magnetic>
+                        <Magnetic>
+                            <motion.a
+                                whileHover={{ scale: 1.2, backgroundColor: 'rgba(0,255,255,0.2)' }}
+                                href="#"
+                                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:text-cyan-400 transition-colors"
+                            >
+                                <Twitter size={22} />
+                            </motion.a>
+                        </Magnetic>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <div className="text-xl font-black uppercase tracking-tighter mb-2">Nexus <span className="text-cyan-400">AV</span></div>
+                        <div className="text-gray-500 text-xs font-bold tracking-[0.2em] uppercase text-center">
+                            © 2026 DHARANIX STUDIO • Dharanidharan
                         </div>
                     </div>
-
-                    <div className="bento-grid">
-                        {/* Featured High-Level Stat */}
-                        <BentoItem span="md:col-span-2 lg:col-span-4" className="min-h-[300px] p-10 flex flex-col justify-between">
-                            <div className="w-12 h-12 rounded-2xl bg-neon-purple/10 flex items-center justify-center text-neon-purple mb-8">
-                                <Zap size={24} />
-                            </div>
-                            <div>
-                                <h3 className="text-5xl font-black text-white mb-2">{stats[0]?.value}</h3>
-                                <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-bold">{stats[0]?.label}</p>
-                            </div>
-                        </BentoItem>
-
-                        {/* Recent Stories Bento Tiles */}
-                        {latestPosts.map((post, idx) => (
-                            <BentoItem 
-                                key={post.id} 
-                                span={idx === 0 ? "md:col-span-2 lg:col-span-8" : "md:col-span-2 lg:col-span-4"} 
-                                className="min-h-[400px] group cursor-pointer"
-                                data-cursor="PLAY"
-                            >
-                                <div className="absolute inset-0 w-full h-full overflow-hidden" onClick={() => handleVideoClick(post.videoUrl)}>
-                                    <img 
-                                        src={post.imageUrl || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80"} 
-                                        alt={post.title}
-                                        className="w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000 grayscale group-hover:grayscale-0"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                                        <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center text-white scale-75 group-hover:scale-100 transition-transform duration-500">
-                                            <PlayCircle size={40} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="absolute bottom-0 left-0 p-10 w-full pointer-events-none">
-                                    <div className="flex items-center gap-3 text-[10px] font-black text-neon-cyan uppercase tracking-widest mb-3">
-                                        <Star size={12} /> Featured
-                                    </div>
-                                    <h3 className="text-2xl md:text-3xl font-black text-white leading-tight mb-4 group-hover:text-neon-cyan transition-colors">
-                                        {post.title}
-                                    </h3>
-                                    <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
-                                        <Calendar size={14} /> {new Date(post.createdAt).toLocaleDateString()}
-                                    </div>
-                                </div>
-                            </BentoItem>
-                        ))}
-
-                        {/* Additional Stats Tiles */}
-                        <BentoItem span="md:col-span-2 lg:col-span-4" className="p-10 flex flex-col justify-center text-center">
-                            <h3 className="text-5xl font-black text-white mb-2">{stats[1]?.value}</h3>
-                            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-bold">{stats[1]?.label}</p>
-                        </BentoItem>
-
-                        <BentoItem span="md:col-span-2 lg:col-span-4" className="p-10 flex flex-col justify-center text-center border-neon-cyan/20">
-                            <h3 className="text-5xl font-black text-neon-cyan mb-2">{stats[2]?.value}</h3>
-                            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-bold">{stats[2]?.label}</p>
-                        </BentoItem>
-
-                        <BentoItem span="md:col-span-2 lg:col-span-4" className="p-10 flex items-center justify-center bg-white group hover:bg-neon-cyan transition-colors duration-500">
-                            <Link 
-                                to="/posts" 
-                                className="flex items-center gap-4 text-black font-black uppercase tracking-[0.3em] text-xs"
-                                data-cursor="EXPLORE"
-                            >
-                                Global Stories <Globe size={18} />
-                            </Link>
-                        </BentoItem>
+                    <div className="flex flex-wrap justify-center gap-6 uppercase font-black tracking-widest text-xs text-gray-500">
+                        <Link to="/about" className="hover:text-cyan-400 transition-colors">About</Link>
+                        <Link to="/contact" className="hover:text-cyan-400 transition-colors">Contact</Link>
+                        <Link to="/projects" className="hover:text-cyan-400 transition-colors">Projects</Link>
                     </div>
                 </div>
-            </section>
-
-            {/* About Section - Redesigned */}
-            <AboutSection />
-
-            {/* Video Modal Overlay */}
-            <AnimatePresence>
-                {activeVideo && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-6 md:p-12"
-                        onClick={() => setActiveVideo(null)}
-                    >
-                        <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="relative w-full max-w-6xl aspect-video glass-modern p-1 rounded-[3rem] overflow-hidden"
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <button
-                                onClick={() => setActiveVideo(null)}
-                                className="absolute top-8 right-8 w-14 h-14 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition-all z-20"
-                            >
-                                <X size={32} />
-                            </button>
-                            <iframe
-                                className="w-full h-full rounded-[2.8rem]"
-                                src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`}
-                                title="Visual Experience"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            </footer>
         </div>
     );
 };
 
-const AboutSection = () => {
-    const [about, setAbout] = useState(null);
-
-    useEffect(() => {
-        const fetchAbout = async () => {
-            try {
-                const res = await api.get('/public/about');
-                setAbout(res.data);
-            } catch (err) {
-                console.error("About fetch error:", err);
-            }
-        };
-        fetchAbout();
-    }, []);
-
-    if (!about) return null;
-
-    return (
-        <section className="relative py-32 overflow-hidden z-10">
-            <div className="container mx-auto px-6 max-w-6xl">
-                <div className="flex flex-col lg:flex-row items-center gap-24">
-                    <motion.div
-                        initial={{ opacity: 0, x: -50 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        className="lg:w-1/2 relative"
-                    >
-                        <div 
-                            className="relative z-10 rounded-[4rem] overflow-hidden border border-white/5 shadow-2xl skew-y-3 hover:skew-y-0 transition-transform duration-1000 group"
-                            data-cursor="STUDIO"
-                        >
-                            <img
-                                src={about.imageUrl || "https://images.unsplash.com/photo-1492691523569-44058d45e3ea?auto=format&fit=crop&q=80"}
-                                alt="Studio"
-                                className="w-full h-[600px] object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105"
-                            />
-                        </div>
-                        <div className="absolute -top-20 -left-20 w-[30rem] h-[30rem] bg-neon-purple/20 rounded-full blur-[120px] -z-10" />
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, x: 50 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        className="lg:w-1/2 space-y-12"
-                    >
-                        <div className="space-y-6">
-                            <span className="text-neon-cyan text-[10px] font-black tracking-[0.5em] uppercase">The Architect</span>
-                            <h2 className="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter">
-                                {about.title} <span className="text-neon-purple">_</span>
-                            </h2>
-                            <p className="text-neon-purple text-2xl font-bold italic tracking-tight">{about.subtitle}</p>
-                        </div>
-                        <p className="text-gray-400 text-xl font-light leading-relaxed">
-                            {about.description}
-                        </p>
-                        <div className="flex items-center gap-12">
-                            <div className="space-y-2">
-                                <p className="text-6xl font-black text-white">{about.experienceYears}+</p>
-                                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">Years Crafting</p>
-                            </div>
-                            <div className="w-px h-16 bg-white/10" />
-                            <div className="space-y-2">
-                                <p className="text-6xl font-black text-neon-cyan">100%</p>
-                                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold">Infinite Vision</p>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-        </section>
-    );
-}
-
 export default Home;
-

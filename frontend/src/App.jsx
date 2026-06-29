@@ -1,18 +1,24 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { lazy, Suspense } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './pages/AdminDashboard';
-import Posts from './pages/Posts';
-import Projects from './pages/Projects';
-import About from './pages/About';
-import StoryLibrary from './pages/StoryLibrary';
-import StoryDetail from './pages/StoryDetail';
-import StoryReader from './pages/StoryReader';
-import Web3Landing from './pages/Web3Landing';
 import CustomCursor from './components/CustomCursor';
 import { AuthProvider } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
+import ErrorBoundary from './components/ErrorBoundary';
+import ProtectedRoute from './components/ProtectedRoute';
+import NotFound from './pages/NotFound';
+
+const Home = lazy(() => import('./pages/Home'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const Posts = lazy(() => import('./pages/Posts'));
+const Projects = lazy(() => import('./pages/Projects'));
+const ProjectCategory = lazy(() => import('./pages/ProjectCategory'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Web3Landing = lazy(() => import('./pages/Web3Landing'));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -22,14 +28,14 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
         <Route path="/admin" element={<PageWrapper><AdminLogin /></PageWrapper>} />
-        <Route path="/dashboard" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
+        <Route path="/dashboard" element={<ProtectedRoute><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
         <Route path="/posts" element={<PageWrapper><Posts /></PageWrapper>} />
         <Route path="/projects" element={<PageWrapper><Projects /></PageWrapper>} />
+        <Route path="/projects/:category" element={<PageWrapper><ProjectCategory /></PageWrapper>} />
+        <Route path="/contact" element={<PageWrapper><Contact /></PageWrapper>} />
         <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
-        <Route path="/stories" element={<PageWrapper><StoryLibrary /></PageWrapper>} />
-        <Route path="/stories/:id" element={<PageWrapper><StoryDetail /></PageWrapper>} />
-        <Route path="/stories/:id/chapters/:chapterId" element={<PageWrapper><StoryReader /></PageWrapper>} />
         <Route path="/web3" element={<PageWrapper><Web3Landing /></PageWrapper>} />
+        <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
       </Routes>
     </AnimatePresence>
   );
@@ -48,22 +54,47 @@ const PageWrapper = ({ children }) => (
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <CustomCursor />
-        <NavbarWrapper />
-        <div className="bg-dark-bg min-h-screen text-gray-200 selection:bg-neon-cyan selection:text-black">
-          <AnimatedRoutes />
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+    <HelmetProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <BrowserRouter>
+            <CustomCursor />
+            <Toaster 
+              position="bottom-right" 
+              toastOptions={{
+                style: {
+                  background: 'rgba(10, 10, 15, 0.9)',
+                  color: '#fff',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '20px',
+                  fontSize: '12px',
+                  fontFamily: "'Poppins', sans-serif"
+                }
+              }} 
+            />
+            <NavbarWrapper />
+            <div className="bg-dark-bg min-h-screen text-gray-200 selection:bg-neon-cyan selection:text-black">
+              <Suspense fallback={
+                <div className="min-h-screen bg-[#050816] flex items-center justify-center">
+                  <div className="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              }>
+                <AnimatedRoutes />
+              </Suspense>
+            </div>
+          </BrowserRouter>
+        </AuthProvider>
+      </ErrorBoundary>
+    </HelmetProvider>
   );
 }
 
 const NavbarWrapper = () => {
     const location = useLocation();
-    const isWeb3 = location.pathname === '/web3';
-    if (isWeb3) return null;
+    const hidePaths = ['/web3', '/admin', '/dashboard'];
+    const shouldHide = hidePaths.some((path) => location.pathname.startsWith(path));
+    if (shouldHide) return null;
     return <Navbar />;
 };
 

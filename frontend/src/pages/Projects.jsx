@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import api from '../api/axios';
 import { Calendar, Target, CheckCircle2, Rocket, ArrowUpRight, Zap, Eye, Globe } from 'lucide-react';
 import Magnetic from '../components/common/Magnetic';
@@ -67,6 +68,11 @@ const Projects = () => {
 
     return (
         <div className="min-h-screen pt-40 px-6 bg-dark-bg pb-32 overflow-hidden relative">
+            <SEO 
+                title="Projects"
+                description="Explore the architectural roadmap and vision timeline of AdVision Studio."
+                url="/projects"
+            />
             {/* Cinematic Backgrounds */}
             <div className="absolute inset-0 pointer-events-none z-0">
                 <div className="aurora-bg opacity-30" />
@@ -144,9 +150,10 @@ const BentoProjectItem = ({ project, index }) => {
     return (
         <BentoItem span="" className="glass-modern neon-glow-border group min-h-[500px] md:min-h-[600px] p-0 overflow-hidden h-full">
             <div className="absolute inset-0 w-full h-full z-0">
-                {project.imageUrl ? (
-                    <img src={project.imageUrl} className="w-full h-full object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-1000 group-hover:scale-105" alt="" />
-                ) : (
+                {project.imageUrl && (
+                    <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" />
+                )}
+                {!project.imageUrl && (
                     <div className="w-full h-full bg-gradient-to-br from-neon-purple/10 to-neon-cyan/5 group-hover:opacity-50 transition-opacity duration-1000" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-dark-bg/90 via-dark-bg/30 to-transparent pointer-events-none" />
