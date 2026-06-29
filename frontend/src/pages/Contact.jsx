@@ -6,7 +6,6 @@ import SEO from '../components/SEO';
 
 const Contact = () => {
     return (
-    return (
         <div className="min-h-screen pt-40 pb-32 bg-dark-bg px-6 overflow-hidden relative">
             <SEO 
                 title="Contact"
