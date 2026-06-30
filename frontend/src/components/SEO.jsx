@@ -11,11 +11,12 @@ const SEO = ({
   structuredData = null
 }) => {
   const { siteSettings } = useSite();
-  const siteTitle = siteSettings?.websiteName || 'AdVision Studio';
-  const siteUrl = 'https://advisionstudio.com';
+  const siteTitle = siteSettings?.websiteName || 'Dharanix Studio | Dharanidharan';
+  const siteUrl = 'https://advisionstudio.com'; // User's custom domain when active
   const fullUrl = `${siteUrl}${url}`;
   const metaTitle = title ? `${title} | ${siteTitle}` : siteTitle;
-  const metaDesc = description || 'Premium video production, visual narratives, and digital experiences by AdVision Studio.';
+  const metaDesc = description || 'Dharanix Studio by Dharanidharan. Premium video production, visual narratives, and digital experiences.';
+  const metaKeywords = "dharanix, dharanidharan, Dharanix Studio, video production, visual narratives, digital experiences, portfolio, creative studio";
   
   return (
     <Helmet>
@@ -23,6 +24,8 @@ const SEO = ({
       <title>{metaTitle}</title>
       <meta name="title" content={metaTitle} />
       <meta name="description" content={metaDesc} />
+      <meta name="keywords" content={metaKeywords} />
+      <meta name="author" content="Dharanidharan" />
       <link rel="canonical" href={fullUrl} />
 
       {/* Open Graph / Facebook */}
