@@ -45,11 +45,11 @@ const CustomCursor = () => {
     }, [cursorX, cursorY]);
 
     return (
-        <div className="fixed inset-0 pointer-events-none z-[9999] md:block hidden" style={{ position: 'fixed' }}>
+        <div className="fixed inset-0 pointer-events-none z-[9999] md:block hidden">
             <motion.div
-                className="fixed top-0 left-0 flex items-center justify-center rounded-full border border-neon-cyan/50 mix-blend-difference backdrop-blur-[2px] transition-all duration-300"
+                className="absolute top-0 left-0 flex items-center justify-center rounded-full border border-neon-cyan/50 mix-blend-difference backdrop-blur-[2px] transition-all duration-300"
                 style={{
-                    position: 'fixed',
+                    position: 'absolute',
                     x: springX,
                     y: springY,
                     translateX: '-50%',
@@ -75,9 +75,9 @@ const CustomCursor = () => {
             </motion.div>
             
             <motion.div 
-                className="fixed top-0 left-0 w-1.5 h-1.5 bg-neon-cyan rounded-full shadow-[0_0_15px_rgba(0,255,255,1)]"
+                className="absolute top-0 left-0 w-1.5 h-1.5 bg-neon-cyan rounded-full shadow-[0_0_15px_rgba(0,255,255,1)]"
                 style={{
-                    position: 'fixed',
+                    position: 'absolute',
                     x: springX,
                     y: springY,
                     translateX: '-50%',

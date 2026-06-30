@@ -199,16 +199,16 @@ const BentoProjectItem = ({ project, index }) => {
                         </p>
                         {project.apkUrl && (
                             <div className="pt-2">
-                                <a 
-                                    href={project.apkUrl} 
-                                    download
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-neon-cyan/10 text-neon-cyan text-[10px] font-black uppercase tracking-[0.2em] border border-neon-cyan/20 hover:bg-neon-cyan/20 transition-colors z-30 relative"
+                                <button 
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        window.open(project.apkUrl, '_blank');
+                                    }}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-neon-cyan/10 text-neon-cyan text-[10px] font-black uppercase tracking-[0.2em] border border-neon-cyan/20 hover:bg-neon-cyan/20 transition-colors z-30 relative cursor-pointer"
                                 >
                                     <Download size={14} /> Download APK
-                                </a>
+                                </button>
                             </div>
                         )}
                     </div>

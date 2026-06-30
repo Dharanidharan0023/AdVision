@@ -6,7 +6,7 @@ const SEO = ({
   title, 
   description, 
   url = '', 
-  image = '/vite.svg', // Default image or provide a real OG image path
+  image = '/assets/favicon.png', // Default image or provide a real OG image path
   type = 'website',
   structuredData = null
 }) => {

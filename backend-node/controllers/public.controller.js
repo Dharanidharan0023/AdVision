@@ -67,8 +67,6 @@ const getAbout = async (req, res) => {
         communityText: "Rising",
         brandsList: "[]",
         joinTitle: "Join the Movement",
-        joinYoutubeLink: "https://youtube.com/@dharanixstudio",
-        joinInstagramLink: "https://www.instagram.com/visionofad",
         imageUrl: "",
         metaTitle: "",
         metaDescription: "",

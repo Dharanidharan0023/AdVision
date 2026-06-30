@@ -137,8 +137,27 @@ app.get('/api/public/home-section/:name', async (req, res) => {
 app.get('/api/public/about', async (req, res) => {
   try {
     const about = await prisma.about.findFirst({ orderBy: { updatedAt: 'desc' } });
-    if (about) res.json(about);
-    else res.status(404).json({ error: 'About data not found' });
+    if (about) {
+      res.json(about);
+    } else {
+      res.json({
+        title: "The Studio",
+        subtitle: "Our Creative Journey",
+        tagsLine: "All glory to God",
+        ourStoryTitle: "Our Story",
+        description: "Describe your studio journey here...",
+        subscribersCount: "1.09K+",
+        videosCount: "105+",
+        viewsCount: "274K+",
+        communityText: "Rising",
+        brandsList: "[]",
+        joinTitle: "Join the Movement",
+        imageUrl: "",
+        metaTitle: "",
+        metaDescription: "",
+        keywords: ""
+      });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -428,7 +428,7 @@ const Home = () => {
                     }}
                     className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
-                    {(loading ? Array.from({ length: 3 }) : featuredVideos).map((video, i) => (
+                    {(loading || featuredVideos.length === 0 ? Array.from({ length: 3 }) : featuredVideos).map((video, i) => (
                         <FeaturedVideoCard key={video?.id ?? i} video={video} stripHtml={stripHtml} />
                     ))}
                 </motion.div>

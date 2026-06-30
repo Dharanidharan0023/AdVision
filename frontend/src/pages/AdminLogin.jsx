@@ -78,6 +78,7 @@ const AdminLogin = () => {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Username"
+                                    autoComplete="username"
                                     className="w-full bg-white/[0.03] border border-white/5 rounded-3xl px-16 py-5 text-white focus:outline-none focus:border-neon-cyan/40 focus:bg-white/5 transition-all placeholder:text-gray-700 font-bold tracking-wide"
                                 />
                             </div>
@@ -92,6 +93,7 @@ const AdminLogin = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
+                                    autoComplete="current-password"
                                     className="w-full bg-white/[0.03] border border-white/5 rounded-3xl px-16 py-5 text-white focus:outline-none focus:border-neon-purple/40 focus:bg-white/5 transition-all placeholder:text-gray-700 font-bold tracking-wide"
                                 />
                             </div>
