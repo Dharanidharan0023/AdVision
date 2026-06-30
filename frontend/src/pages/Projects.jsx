@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import api from '../api/axios';
-import { Calendar, Target, CheckCircle2, Rocket, ArrowUpRight, Zap, Eye, Globe } from 'lucide-react';
+import { Calendar, Target, CheckCircle2, Rocket, ArrowUpRight, Zap, Eye, Globe, Download } from 'lucide-react';
 import Magnetic from '../components/common/Magnetic';
 import BentoItem from '../components/common/BentoItem';
+import CoverImage from '../components/CoverImage';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -74,8 +75,12 @@ const Projects = () => {
                 url="/projects"
             />
             {/* Cinematic Backgrounds */}
-            <div className="absolute inset-0 pointer-events-none z-0">
-                <div className="aurora-bg opacity-30" />
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+                <motion.div 
+                    animate={{ rotate: 360, scale: [1, 1.2, 1] }} 
+                    transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+                    className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] aurora-bg opacity-20" 
+                />
                 <div className="mesh-overlay opacity-50" />
             </div>
             
@@ -100,9 +105,11 @@ const Projects = () => {
                 >
                     {projects.map((project, index) => (
                         <motion.div key={project.id} variants={itemVariants} className={getSpan(index)}>
-                            <div data-cursor="EXPLORE" className="h-full">
-                                <BentoProjectItem project={project} index={index} />
-                            </div>
+                            <Link to={`/projects/${(project.category || 'advision').toLowerCase()}`} className="block h-full cursor-none">
+                                <div data-cursor="EXPLORE" className="h-full">
+                                    <BentoProjectItem project={project} index={index} />
+                                </div>
+                            </Link>
                         </motion.div>
                     ))}
                     
@@ -151,7 +158,11 @@ const BentoProjectItem = ({ project, index }) => {
         <BentoItem span="" className="glass-modern neon-glow-border group min-h-[500px] md:min-h-[600px] p-0 overflow-hidden h-full">
             <div className="absolute inset-0 w-full h-full z-0">
                 {project.imageUrl && (
-                    <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" />
+                    <CoverImage 
+                        src={project.imageUrl} 
+                        alt={project.title} 
+                        className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" 
+                    />
                 )}
                 {!project.imageUrl && (
                     <div className="w-full h-full bg-gradient-to-br from-neon-purple/10 to-neon-cyan/5 group-hover:opacity-50 transition-opacity duration-1000" />
@@ -179,12 +190,28 @@ const BentoProjectItem = ({ project, index }) => {
                             ? new Date(project.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                             : 'Nov 2024'}
                     </div>
-                    <h2 className="text-4xl md:text-6xl font-black text-white leading-none tracking-tighter uppercase group-hover:text-neon-cyan transition-colors duration-700 blur-[0.5px] group-hover:blur-0">
+                    <h2 className="text-4xl md:text-6xl font-black text-white leading-none tracking-tighter uppercase group-hover:text-neon-cyan transition-colors duration-700 blur-[0.5px] group-hover:blur-0 translate-y-8 group-hover:translate-y-0 transition-all">
                         {project.title}
                     </h2>
-                    <p className="text-gray-400 text-lg font-medium leading-relaxed max-w-lg line-clamp-3 group-hover:text-white transition-colors duration-500">
-                        {project.description}
-                    </p>
+                    <div className="opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 h-0 group-hover:h-auto overflow-hidden">
+                        <p className="text-gray-400 text-lg font-medium leading-relaxed max-w-lg line-clamp-3 group-hover:text-white transition-colors duration-500 mb-4">
+                            {project.description}
+                        </p>
+                        {project.apkUrl && (
+                            <div className="pt-2">
+                                <a 
+                                    href={project.apkUrl} 
+                                    download
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-neon-cyan/10 text-neon-cyan text-[10px] font-black uppercase tracking-[0.2em] border border-neon-cyan/20 hover:bg-neon-cyan/20 transition-colors z-30 relative"
+                                >
+                                    <Download size={14} /> Download APK
+                                </a>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
             

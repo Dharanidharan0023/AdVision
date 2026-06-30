@@ -1,5 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useSite } from '../context/SiteContext';
 
 const SEO = ({ 
   title, 
@@ -9,9 +10,11 @@ const SEO = ({
   type = 'website',
   structuredData = null
 }) => {
+  const { siteSettings } = useSite();
+  const siteTitle = siteSettings?.websiteName || 'AdVision Studio';
   const siteUrl = 'https://advisionstudio.com';
   const fullUrl = `${siteUrl}${url}`;
-  const metaTitle = title ? `${title} | AdVision Studio` : 'AdVision Studio | Premium Digital Nexus';
+  const metaTitle = title ? `${title} | ${siteTitle}` : siteTitle;
   const metaDesc = description || 'Premium video production, visual narratives, and digital experiences by AdVision Studio.';
   
   return (

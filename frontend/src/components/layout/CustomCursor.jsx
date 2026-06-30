@@ -49,6 +49,7 @@ const CustomCursor = () => {
             <motion.div
                 className="fixed top-0 left-0 flex items-center justify-center rounded-full border border-neon-cyan/50 mix-blend-difference pointer-events-none z-[9999] invisible md:visible"
                 style={{
+                    position: 'fixed',
                     x: springX,
                     y: springY,
                     translateX: '-50%',
@@ -75,6 +76,7 @@ const CustomCursor = () => {
             <motion.div 
                 className="fixed top-0 left-0 w-1.5 h-1.5 bg-neon-cyan rounded-full shadow-[0_0_15px_rgba(0,255,255,1)] pointer-events-none z-[10000] invisible md:visible"
                 style={{
+                    position: 'fixed',
                     x: springX,
                     y: springY,
                     translateX: '-50%',

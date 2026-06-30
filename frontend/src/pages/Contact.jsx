@@ -1,10 +1,40 @@
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MapPin, Phone, Send, Instagram, Youtube } from 'lucide-react';
+import { Mail, MapPin, Phone, Send, Instagram, Youtube, Twitter } from 'lucide-react';
 import Magnetic from '../components/common/Magnetic';
 import SEO from '../components/SEO';
+import { useSocial } from "../context/SocialContext";
+import api from '../api/axios';
+import { toast } from 'react-hot-toast';
 
 const Contact = () => {
+    const { getPrimaryLink, loading: socialLoading } = useSocial();
+    const primaryYoutube = getPrimaryLink('youtube');
+    const primaryInstagram = getPrimaryLink('instagram');
+    const primaryTwitter = getPrimaryLink('twitter');
+
+    const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.name || !formData.email || !formData.message) {
+            return toast.error("All fields are required");
+        }
+        setIsSubmitting(true);
+        try {
+            await api.post('/public/contact-messages', formData);
+            toast.success("Message sent successfully!");
+            setFormData({ name: '', email: '', message: '' });
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to send message. Please try again later.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="min-h-screen pt-40 pb-32 bg-dark-bg px-6 overflow-hidden relative">
             <SEO 
@@ -26,7 +56,23 @@ const Contact = () => {
                     "url": "https://advisionstudio.com/contact"
                 }}
             />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.15),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.12),transparent_35%)] pointer-events-none" />
+            {/* Ambient Background Orbs */}
+            <motion.div 
+                animate={{ 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.5, 0.3],
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-0 left-0 w-[800px] h-[800px] bg-cyan-500/10 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" 
+            />
+            <motion.div 
+                animate={{ 
+                    scale: [1, 1.5, 1],
+                    opacity: [0.2, 0.4, 0.2],
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3 pointer-events-none" 
+            />
             <div className="container mx-auto max-w-6xl relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -45,59 +91,32 @@ const Contact = () => {
                 </motion.div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-24">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="glass-modern rounded-[3rem] border border-white/10 p-10 shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
-                    >
-                        <div className="flex items-center gap-4 mb-8 text-neon-cyan">
-                            <div className="w-14 h-14 rounded-3xl bg-neon-cyan/10 flex items-center justify-center">
-                                <Mail size={24} />
+                    {[
+                        { icon: Mail, title: "Email", value: "support@dharanixstudio.com", desc: "For collaborations, licensing, press, or general enquiries.", color: "text-neon-cyan", bg: "bg-neon-cyan/10" },
+                        { icon: Phone, title: "Phone", value: "+91 98765 43210", desc: "Available Monday through Saturday, 10AM to 8PM IST.", color: "text-neon-purple", bg: "bg-neon-purple/10" },
+                        { icon: MapPin, title: "Location", value: "Chennai, India", desc: "Schedule a studio visit or ask for a remote briefing call.", color: "text-neon-cyan", bg: "bg-neon-cyan/10" }
+                    ].map((item, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ delay: i * 0.15, duration: 0.6 }}
+                            whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
+                            className="glass-modern rounded-[3rem] border border-white/5 hover:border-white/20 p-10 shadow-[0_10px_30px_rgba(0,0,0,0.2)] transition-all duration-300 group"
+                        >
+                            <div className={`flex items-center gap-4 mb-8 ${item.color}`}>
+                                <div className={`w-14 h-14 rounded-3xl ${item.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                                    <item.icon size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter">{item.title}</h2>
+                                    <p className="text-gray-400 text-sm">{item.value}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className="text-2xl font-black uppercase tracking-tighter">Email</h2>
-                                <p className="text-gray-400 text-sm">support@dharanixstudio.com</p>
-                            </div>
-                        </div>
-                        <p className="text-gray-500 leading-relaxed">For collaborations, licensing, press, or general enquiries, message us anytime.</p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="glass-modern rounded-[3rem] border border-white/10 p-10 shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
-                    >
-                        <div className="flex items-center gap-4 mb-8 text-neon-purple">
-                            <div className="w-14 h-14 rounded-3xl bg-neon-purple/10 flex items-center justify-center">
-                                <Phone size={24} />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-black uppercase tracking-tighter">Phone</h2>
-                                <p className="text-gray-400 text-sm">+91 98765 43210</p>
-                            </div>
-                        </div>
-                        <p className="text-gray-500 leading-relaxed">Available Monday through Saturday, 10AM to 8PM IST.</p>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="glass-modern rounded-[3rem] border border-white/10 p-10 shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
-                    >
-                        <div className="flex items-center gap-4 mb-8 text-neon-cyan">
-                            <div className="w-14 h-14 rounded-3xl bg-neon-cyan/10 flex items-center justify-center">
-                                <MapPin size={24} />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-black uppercase tracking-tighter">Location</h2>
-                                <p className="text-gray-400 text-sm">Dharanidharan Studio, Chennai, India</p>
-                            </div>
-                        </div>
-                        <p className="text-gray-500 leading-relaxed">Schedule a studio visit or ask for a remote briefing call with our creative team.</p>
-                    </motion.div>
+                            <p className="text-gray-500 leading-relaxed group-hover:text-gray-400 transition-colors">{item.desc}</p>
+                        </motion.div>
+                    ))}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -111,18 +130,33 @@ const Contact = () => {
                             <h3 className="text-4xl font-black uppercase tracking-tighter">Drop a line</h3>
                             <p className="text-gray-400 leading-relaxed">Send us your vision. We'll answer with a plan and a timeline.</p>
 
-                            <form className="space-y-6">
-                                <div>
-                                    <label htmlFor="contact-email" className="block text-[10px] uppercase tracking-[0.35em] text-gray-500 mb-2">Your Email</label>
-                                    <input id="contact-email" aria-label="Your Email" className="w-full bg-white/[0.05] border border-white/10 rounded-3xl px-5 py-4 text-white outline-none focus:border-neon-cyan/40 focus:bg-white/10 transition" placeholder="hello@you.com" />
+                            <form className="space-y-6" onSubmit={handleSubmit}>
+                                <div className="group relative">
+                                    <label htmlFor="contact-name" className="block text-[10px] uppercase tracking-[0.35em] text-gray-500 mb-2 group-focus-within:text-neon-cyan transition-colors">Your Name</label>
+                                    <input id="contact-name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} aria-label="Your Name" className="w-full bg-white/[0.03] border border-white/10 rounded-3xl px-5 py-4 text-white outline-none focus:border-neon-cyan focus:bg-white/5 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all duration-300" placeholder="John Doe" />
                                 </div>
-                                <div>
-                                    <label htmlFor="contact-brief" className="block text-[10px] uppercase tracking-[0.35em] text-gray-500 mb-2">Project Short Brief</label>
-                                    <textarea id="contact-brief" aria-label="Project Short Brief" rows="4" className="w-full bg-white/[0.05] border border-white/10 rounded-3xl px-5 py-4 text-white outline-none focus:border-neon-cyan/40 focus:bg-white/10 transition" placeholder="Tell us about the project..." />
+                                <div className="group relative">
+                                    <label htmlFor="contact-email" className="block text-[10px] uppercase tracking-[0.35em] text-gray-500 mb-2 group-focus-within:text-neon-cyan transition-colors">Your Email</label>
+                                    <input id="contact-email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} aria-label="Your Email" className="w-full bg-white/[0.03] border border-white/10 rounded-3xl px-5 py-4 text-white outline-none focus:border-neon-cyan focus:bg-white/5 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all duration-300" placeholder="hello@you.com" />
                                 </div>
-                                <button type="button" aria-label="Send Message" className="btn-primary w-full py-5 uppercase tracking-[0.4em] font-black flex items-center justify-center gap-3">
-                                    <Send size={18} /> Send Message
-                                </button>
+                                <div className="group relative">
+                                    <label htmlFor="contact-brief" className="block text-[10px] uppercase tracking-[0.35em] text-gray-500 mb-2 group-focus-within:text-neon-purple transition-colors">Project Short Brief</label>
+                                    <textarea id="contact-brief" value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} aria-label="Project Short Brief" rows="4" className="w-full bg-white/[0.03] border border-white/10 rounded-3xl px-5 py-4 text-white outline-none focus:border-neon-purple focus:bg-white/5 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)] transition-all duration-300 resize-none" placeholder="Tell us about the project..." />
+                                </div>
+                                <Magnetic>
+                                    <button type="submit" disabled={isSubmitting} aria-label="Send Message" className="btn-primary w-full py-5 uppercase tracking-[0.4em] font-black flex items-center justify-center gap-3 overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-neon-cyan via-indigo-500 to-neon-purple opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                        <span className="relative z-10 flex items-center gap-3">
+                                            {isSubmitting ? (
+                                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Send Message
+                                                </>
+                                            )}
+                                        </span>
+                                    </button>
+                                </Magnetic>
                             </form>
                         </div>
                     </motion.div>
@@ -138,21 +172,49 @@ const Contact = () => {
                             <p className="text-gray-400 leading-relaxed">Follow us across channels for updates, behind-the-scenes and live drops.</p>
                         </div>
 
-                        <div className="flex flex-wrap gap-4">
-                            <Magnetic>
-                                <a href="https://youtube.com/@dharanixstudio" aria-label="Visit YouTube Channel" target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[160px] px-6 py-5 rounded-3xl bg-white/5 border border-white/10 text-white hover:bg-red-600/10 transition">
-                                    <div className="flex items-center gap-3">
-                                        <Youtube aria-hidden="true" /> YouTube
-                                    </div>
-                                </a>
-                            </Magnetic>
-                            <Magnetic>
-                                <a href="https://www.instagram.com/visionofad" aria-label="Visit Instagram Profile" target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[160px] px-6 py-5 rounded-3xl bg-white/5 border border-white/10 text-white hover:bg-pink-500/10 transition">
-                                    <div className="flex items-center gap-3">
-                                        <Instagram aria-hidden="true" /> Instagram
-                                    </div>
-                                </a>
-                            </Magnetic>
+                        <div className="flex flex-col gap-4 mt-8">
+                            {(!socialLoading && primaryYoutube) && (
+                                <Magnetic>
+                                    <a href={primaryYoutube} aria-label="Visit YouTube Channel" target="_blank" rel="noopener noreferrer" className="group relative flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-red-500/50 hover:bg-white/10 transition-all duration-300 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-transparent translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
+                                        <div className="relative z-10 flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-red-600/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform duration-300">
+                                                <Youtube size={24} />
+                                            </div>
+                                            <div className="font-black uppercase tracking-widest text-white">YouTube</div>
+                                        </div>
+                                        <div className="relative z-10 text-gray-500 group-hover:text-white transition-colors duration-300">→</div >
+                                    </a>
+                                </Magnetic>
+                            )}
+                            {(!socialLoading && primaryInstagram) && (
+                                <Magnetic>
+                                    <a href={primaryInstagram} aria-label="Visit Instagram Profile" target="_blank" rel="noopener noreferrer" className="group relative flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-pink-500/50 hover:bg-white/10 transition-all duration-300 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-pink-600/20 to-transparent translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
+                                        <div className="relative z-10 flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-pink-600/10 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform duration-300">
+                                                <Instagram size={24} />
+                                            </div>
+                                            <div className="font-black uppercase tracking-widest text-white">Instagram</div>
+                                        </div>
+                                        <div className="relative z-10 text-gray-500 group-hover:text-white transition-colors duration-300">→</div >
+                                    </a>
+                                </Magnetic>
+                            )}
+                            {(!socialLoading && primaryTwitter) && (
+                                <Magnetic>
+                                    <a href={primaryTwitter} aria-label="Visit Twitter Profile" target="_blank" rel="noopener noreferrer" className="group relative flex items-center justify-between p-6 rounded-3xl bg-white/5 border border-white/10 hover:border-cyan-500/50 hover:bg-white/10 transition-all duration-300 overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-transparent translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
+                                        <div className="relative z-10 flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-cyan-600/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-300">
+                                                <Twitter size={24} />
+                                            </div>
+                                            <div className="font-black uppercase tracking-widest text-white">Twitter</div>
+                                        </div>
+                                        <div className="relative z-10 text-gray-500 group-hover:text-white transition-colors duration-300">→</div >
+                                    </a>
+                                </Magnetic>
+                            )}
                         </div>
                     </motion.div>
                 </div>

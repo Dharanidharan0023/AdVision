@@ -9,6 +9,9 @@ import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFound from './pages/NotFound';
+import { SocialProvider } from './context/SocialContext';
+import { SiteProvider } from './context/SiteContext';
+import Footer from './components/layout/Footer';
 
 const Home = lazy(() => import('./pages/Home'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
@@ -43,9 +46,9 @@ function AnimatedRoutes() {
 
 const PageWrapper = ({ children }) => (
   <motion.div
-    initial={{ opacity: 0, filter: "blur(10px)", scale: 1.02 }}
-    animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-    exit={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }}
+    initial={{ opacity: 0, filter: "blur(15px)", y: 20, scale: 0.98 }}
+    animate={{ opacity: 1, filter: "blur(0px)", y: 0, scale: 1 }}
+    exit={{ opacity: 0, filter: "blur(15px)", y: -20, scale: 1.02 }}
     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
   >
     {children}
@@ -57,7 +60,9 @@ function App() {
     <HelmetProvider>
       <ErrorBoundary>
         <AuthProvider>
-          <BrowserRouter>
+          <SiteProvider>
+            <SocialProvider>
+              <BrowserRouter>
             <CustomCursor />
             <Toaster 
               position="bottom-right" 
@@ -83,7 +88,10 @@ function App() {
                 <AnimatedRoutes />
               </Suspense>
             </div>
-          </BrowserRouter>
+            <FooterWrapper />
+            </BrowserRouter>
+            </SocialProvider>
+          </SiteProvider>
         </AuthProvider>
       </ErrorBoundary>
     </HelmetProvider>
@@ -96,6 +104,14 @@ const NavbarWrapper = () => {
     const shouldHide = hidePaths.some((path) => location.pathname.startsWith(path));
     if (shouldHide) return null;
     return <Navbar />;
+};
+
+const FooterWrapper = () => {
+    const location = useLocation();
+    const hidePaths = ['/web3', '/admin', '/dashboard'];
+    const shouldHide = hidePaths.some((path) => location.pathname.startsWith(path));
+    if (shouldHide) return null;
+    return <Footer />;
 };
 
 export default App;

@@ -105,14 +105,17 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout, isCollapsed, setIsCollapse
     );
 
     return (
-        <motion.div 
-            animate={{ width: isCollapsed ? 96 : 288 }} 
-            className="fixed inset-y-0 left-0 lg:flex hidden flex-col z-[100] p-6 transition-all duration-500"
-        >
-            <aside className="h-full bg-dark-bg/40 backdrop-blur-3xl border border-white/5 rounded-[3rem] shadow-2xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
-                {sidebarContent}
-            </aside>
+        <>
+            {/* Desktop Sidebar */}
+            <motion.div 
+                animate={{ width: isCollapsed ? 96 : 288 }} 
+                className="fixed inset-y-0 left-0 hidden lg:flex flex-col z-[100] p-6 transition-all duration-500"
+            >
+                <aside className="h-full w-full bg-dark-bg/40 backdrop-blur-3xl border border-white/5 rounded-[3rem] shadow-2xl overflow-hidden relative">
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+                    {sidebarContent}
+                </aside>
+            </motion.div>
             
             {/* Mobile Header Toggle */}
             <div className="lg:hidden fixed top-0 left-0 w-full h-20 bg-dark-bg/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 z-[100]">
@@ -148,7 +151,7 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout, isCollapsed, setIsCollapse
                     </>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </>
     );
 };
 

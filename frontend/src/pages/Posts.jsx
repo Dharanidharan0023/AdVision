@@ -6,6 +6,7 @@ import DOMPurify from 'dompurify';
 import SEO from '../components/SEO';
 import Magnetic from '../components/common/Magnetic';
 import BentoItem from '../components/common/BentoItem';
+import CoverImage from '../components/CoverImage';
 
 const Posts = () => {
     const [posts, setPosts] = useState([]);
@@ -158,11 +159,21 @@ const BentoPostCard = ({ post, index, onVideoClick }) => {
     // Dynamic spanning based on index for architectural rhythm
     const span = (index % 4 === 0) ? "md:col-span-4 lg:col-span-8" : "md:col-span-4 lg:col-span-4";
     
+    // Helper to extract raw text from HTML string
+    const getRawText = (html) => {
+        if (!html) return '';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return (tmp.textContent || tmp.innerText || "").trim();
+    };
+
+    const plainTextContent = getRawText(post.content);
+
     return (
         <BentoItem span={span} className="group min-h-[500px] overflow-hidden">
             <div className="absolute inset-0 w-full h-full">
                 {post.imageUrl ? (
-                    <img 
+                    <CoverImage 
                         src={post.imageUrl} 
                         className="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60 group-hover:scale-110 transition-all duration-1000" 
                         alt={post.title} 
@@ -191,9 +202,11 @@ const BentoPostCard = ({ post, index, onVideoClick }) => {
                 </div>
 
                 <div className="space-y-8">
-                    <p className="text-gray-400 text-lg font-light leading-relaxed max-w-xl line-clamp-3">
-                        {post.content}
-                    </p>
+                    {plainTextContent && (
+                        <p className="text-gray-400 text-lg font-light leading-relaxed max-w-xl line-clamp-3">
+                            {plainTextContent}
+                        </p>
+                    )}
                     <div className="flex items-center justify-between pt-8 border-t border-white/5">
                         <div className="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-white/30">
                             <User size={14} className="text-neon-purple" /> Production Admin

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 import { Loader2 } from 'lucide-react';
 
@@ -167,7 +167,7 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
                             onChange={(e) => {
                                 const url = e.target.value;
                                 handleChange(e);
-                                const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/)([\w-]{11}))/);
+                                const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
                                 if (videoIdMatch && videoIdMatch[1]) {
                                     setFormData(prev => ({
                                         ...prev,
@@ -176,7 +176,7 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
                                     }));
                                 }
                             }}
-                            placeholder="YouTube URL..."
+                            placeholder="YouTube or Instagram URL..."
                             className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-purple/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
                         />
                     </div>
@@ -188,8 +188,16 @@ const PostForm = ({ initialData, onSubmit, onCancel }) => {
                         type="text"
                         name="imageUrl"
                         value={formData.imageUrl}
-                        onChange={handleChange}
-                        placeholder="Image URL..."
+                        onChange={(e) => {
+                            const url = e.target.value;
+                            const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
+                            if (videoIdMatch && videoIdMatch[1]) {
+                                setFormData(prev => ({ ...prev, imageUrl: `https://img.youtube.com/vi/${videoIdMatch[1]}/maxresdefault.jpg` }));
+                            } else {
+                                handleChange(e);
+                            }
+                        }}
+                        placeholder="Image URL or YouTube Video/Shorts Link..."
                         className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-neon-cyan/50 focus:bg-white/10 transition-all placeholder:text-gray-600"
                     />
                 </div>

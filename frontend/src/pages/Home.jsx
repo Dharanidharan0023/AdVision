@@ -1,14 +1,15 @@
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import DOMPurify from 'dompurify';
 import profileImg from "../assets/profile.webp";
 import ytThumb from "../assets/YT1.webp";
 import api from "../api/axios";
 import Magnetic from "../components/common/Magnetic";
-
-
+import { useSocial } from "../context/SocialContext";
+import BentoItem from '../components/common/BentoItem';
+import CoverImage from '../components/CoverImage';
 import {
     Play,
     Youtube,
@@ -21,6 +22,7 @@ import {
 
 const FeaturedVideoCard = ({ video, stripHtml }) => {
     const cardRef = useRef(null);
+    const [isHovered, setIsHovered] = useState(false);
     const x = useMotionValue(0);
     const y = useMotionValue(0);
 
@@ -46,12 +48,14 @@ const FeaturedVideoCard = ({ video, stripHtml }) => {
     const handleMouseLeave = () => {
         x.set(0);
         y.set(0);
+        setIsHovered(false);
     };
 
     return (
         <motion.div
             ref={cardRef}
             onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={handleMouseLeave}
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
             variants={{
@@ -70,10 +74,10 @@ const FeaturedVideoCard = ({ video, stripHtml }) => {
             <div className="absolute inset-0 -translate-x-[150%] skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:translate-x-[150%] transition-transform duration-1000 ease-in-out pointer-events-none z-20" />
             
             <div className="relative aspect-video overflow-hidden bg-gray-900 z-10" style={{ transform: "translateZ(30px)" }}>
-                <img
+                <CoverImage
                     src={video?.imageUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=600'}
                     alt={video?.title ?? 'Featured video'}
-                    className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                    className={`w-full h-full object-cover transition-all duration-1000 ${isHovered ? 'scale-110 grayscale-0 opacity-100' : 'grayscale opacity-60'}`}
                 />
                 {video?.videoUrl && (
                     <a href={video.videoUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
@@ -99,6 +103,7 @@ const FeaturedVideoCard = ({ video, stripHtml }) => {
 };
 
 const Home = () => {
+    const navigate = useNavigate();
     const containerRef = useRef(null);
     const [heroData, setHeroData] = useState({
         title: 'DHARANIX <span class="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent">Beyond Your vision</span>',
@@ -112,6 +117,11 @@ const Home = () => {
     ]);
     const [featuredVideos, setFeaturedVideos] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const { getPrimaryLink, loading: socialLoading } = useSocial();
+    const primaryYoutube = getPrimaryLink('youtube');
+    const primaryInstagram = getPrimaryLink('instagram');
+    const primaryTwitter = getPrimaryLink('twitter');
 
     const { scrollYProgress } = useScroll({
         target: containerRef,
@@ -273,20 +283,23 @@ const Home = () => {
                         </motion.div>
 
                         <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="flex flex-wrap gap-5">
-                            <Magnetic>
-                                <motion.a
-                                    href="https://youtube.com/@dharanixstudio?si=YuoczrWD_6GTHqPo"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(0,255,255,0.5)' }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="bg-cyan-400 text-black font-bold py-4 px-8 rounded-full uppercase tracking-widest flex items-center gap-3"
-                                >
-                                    <Youtube size={20} /> Watch Videos
-                                </motion.a>
-                            </Magnetic>
+                            {(!socialLoading && primaryYoutube) && (
+                                <Magnetic>
+                                    <motion.a
+                                        href={primaryYoutube}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(0,255,255,0.5)' }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="bg-cyan-400 text-black font-bold py-4 px-8 rounded-full uppercase tracking-widest flex items-center gap-3"
+                                    >
+                                        <Youtube size={20} /> Watch Videos
+                                    </motion.a>
+                                </Magnetic>
+                            )}
                             <Magnetic>
                                 <motion.button
+                                    onClick={() => navigate('/projects')}
                                     whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
                                     whileTap={{ scale: 0.95 }}
                                     className="border border-white/20 backdrop-blur-md py-4 px-8 rounded-full uppercase tracking-widest flex items-center gap-3 relative overflow-hidden group"
@@ -337,30 +350,34 @@ const Home = () => {
                                 </div>
                             </div>
                         </motion.div>
-                        <motion.a
-                            href="https://youtube.com/@dharanixstudio"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            animate={{ y: [-10, 10, -10], rotate: [-5, 5, -5] }}
-                            transition={{ repeat: Infinity, duration: 4 }}
-                            className="absolute top-10 right-6 z-30"
-                        >
-                            <div className="w-20 h-20 rounded-3xl bg-red-600 flex items-center justify-center shadow-[0_0_40px_rgba(255,0,0,0.5)]">
-                                <Youtube size={36} />
-                            </div>
-                        </motion.a>
-                        <motion.a
-                            href="https://www.instagram.com/visionofad?igsh=YTJ1cjYxYjMxdXI5"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            animate={{ y: [10, -10, 10], rotate: [5, -5, 5] }}
-                            transition={{ repeat: Infinity, duration: 5 }}
-                            className="absolute top-36 right-9 z-30"
-                        >
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.5)]">
-                                <Instagram size={24} />
-                            </div>
-                        </motion.a>
+                        {(!socialLoading && primaryYoutube) && (
+                            <motion.a
+                                href={primaryYoutube}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                animate={{ y: [-10, 10, -10], rotate: [-5, 5, -5] }}
+                                transition={{ repeat: Infinity, duration: 4 }}
+                                className="absolute top-10 right-6 z-30"
+                            >
+                                <div className="w-20 h-20 rounded-3xl bg-red-600 flex items-center justify-center shadow-[0_0_40px_rgba(255,0,0,0.5)]">
+                                    <Youtube size={36} />
+                                </div>
+                            </motion.a>
+                        )}
+                        {(!socialLoading && primaryInstagram) && (
+                            <motion.a
+                                href={primaryInstagram}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                animate={{ y: [10, -10, 10], rotate: [5, -5, 5] }}
+                                transition={{ repeat: Infinity, duration: 5 }}
+                                className="absolute top-36 right-9 z-30"
+                            >
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.5)]">
+                                    <Instagram size={24} />
+                                </div>
+                            </motion.a>
+                        )}
                     </motion.div>
                 </div>
                 
@@ -417,55 +434,6 @@ const Home = () => {
                 </motion.div>
             </section>
 
-            <footer className="relative mt-20 border-t border-white/10 bg-gradient-to-b from-transparent to-white/[0.02]">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-                <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col lg:flex-row items-center justify-between gap-8">
-                    <div className="flex items-center gap-5">
-                        <Magnetic>
-                            <motion.a
-                                whileHover={{ scale: 1.2, rotate: 5, backgroundColor: 'rgba(255,0,0,0.2)' }}
-                                href="https://youtube.com/@dharanixstudio?si=YuoczrWD_6GTHqPo"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:text-red-500 transition-colors"
-                            >
-                                <Youtube size={22} />
-                            </motion.a>
-                        </Magnetic>
-                        <Magnetic>
-                            <motion.a
-                                whileHover={{ scale: 1.2, rotate: -5, backgroundColor: 'rgba(236,72,153,0.2)' }}
-                                href="https://www.instagram.com/visionofad?igsh=YTJ1cjYxYjMxdXI5"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:text-pink-500 transition-colors"
-                            >
-                                <Instagram size={22} />
-                            </motion.a>
-                        </Magnetic>
-                        <Magnetic>
-                            <motion.a
-                                whileHover={{ scale: 1.2, backgroundColor: 'rgba(0,255,255,0.2)' }}
-                                href="#"
-                                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:text-cyan-400 transition-colors"
-                            >
-                                <Twitter size={22} />
-                            </motion.a>
-                        </Magnetic>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <div className="text-xl font-black uppercase tracking-tighter mb-2">Nexus <span className="text-cyan-400">AV</span></div>
-                        <div className="text-gray-500 text-xs font-bold tracking-[0.2em] uppercase text-center">
-                            © 2026 DHARANIX STUDIO • Dharanidharan
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-6 uppercase font-black tracking-widest text-xs text-gray-500">
-                        <Link to="/about" className="hover:text-cyan-400 transition-colors">About</Link>
-                        <Link to="/contact" className="hover:text-cyan-400 transition-colors">Contact</Link>
-                        <Link to="/projects" className="hover:text-cyan-400 transition-colors">Projects</Link>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 };

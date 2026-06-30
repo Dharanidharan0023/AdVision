@@ -179,7 +179,7 @@ const AdminDashboard = () => {
         <div className="min-h-screen bg-dark-bg text-gray-200 font-sans flex flex-col lg:flex-row overflow-hidden">
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={logout} isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 
-            <main className={`flex-1 ${isSidebarCollapsed ? 'lg:ml-24' : 'lg:ml-72'} p-6 md:p-10 pt-28 lg:pt-10 h-screen overflow-y-auto custom-scrollbar no-scrollbar transition-all duration-500`}>
+            <main className={`flex-1 ${isSidebarCollapsed ? 'lg:ml-24' : 'lg:ml-72'} p-4 md:p-10 pt-28 lg:pt-10 h-screen overflow-y-auto custom-scrollbar no-scrollbar transition-all duration-500`}>
                 <div className="max-w-7xl mx-auto space-y-12 pb-20">
 
                     {/* Header Section */}
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
                             </h1>
                         </div>
                         
-                        <div className="flex items-center gap-6">
+                        <div className="flex flex-wrap items-center gap-6">
                             {/* Connection Badge */}
                             <div className="flex flex-col items-end gap-2">
                                 <div className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-3 ${

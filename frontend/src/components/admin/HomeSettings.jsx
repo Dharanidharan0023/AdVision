@@ -1,7 +1,8 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../api/axios';
-import { Save, RefreshCw, Plus, Check, X } from 'lucide-react';
+import { Save, RefreshCw, Plus, Check, X, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSite } from '../../context/SiteContext';
 
 const HomeSettings = () => {
     const [loading, setLoading] = useState(true);
@@ -19,6 +20,20 @@ const HomeSettings = () => {
     const [allPosts, setAllPosts] = useState([]);
     const [featuredPosts, setFeaturedPosts] = useState([]);
     const [updatingPostId, setUpdatingPostId] = useState(null);
+
+    // Global Site Identity
+    const { siteSettings, updateSiteSettings } = useSite();
+    const [identityData, setIdentityData] = useState({
+        websiteName: 'AdVision',
+        footerDescription: 'Creating immersive neuro-cinematic digital experiences.',
+        footerCopyright: '© 2026 AdVision Studio. All rights reserved.'
+    });
+
+    useEffect(() => {
+        if (siteSettings) {
+            setIdentityData(siteSettings);
+        }
+    }, [siteSettings]);
 
     useEffect(() => {
         fetchSettings();
@@ -136,6 +151,19 @@ const HomeSettings = () => {
         }
     };
 
+    const handleSaveIdentity = async () => {
+        try {
+            setSaving(true);
+            setMessage({ type: '', text: '' });
+            await updateSiteSettings(identityData);
+            setMessage({ type: 'success', text: `Global site identity updated successfully.` });
+        } catch (err) {
+            setMessage({ type: 'error', text: `Failed to update site identity.` });
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) return <div className="text-gray-400">Loading home settings...</div>;
 
     const nonFeaturedPosts = allPosts.filter(p => !p.featured);
@@ -168,16 +196,64 @@ const HomeSettings = () => {
             </div>
 
             {message.text && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`rounded-3xl p-4 border ${message.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-300' : 'bg-red-500/10 border-red-500/20 text-red-300'}`}
-                >
+                <div className={`p-4 rounded-xl border ${message.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-green-500/10 border-green-500/20 text-green-400'}`}>
                     {message.text}
-                </motion.div>
+                </div>
             )}
 
-            <section className="glass-panel p-8 rounded-3xl border border-white/10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Global Site Identity */}
+                <div className="glass-modern p-8 rounded-3xl border border-white/5 space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-neon-cyan/10 flex items-center justify-center text-neon-cyan">
+                            <Globe size={20} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white uppercase tracking-wider">Global Site Identity</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Website Name</label>
+                            <input
+                                type="text"
+                                value={identityData.websiteName || ''}
+                                onChange={(e) => setIdentityData(prev => ({ ...prev, websiteName: e.target.value }))}
+                                className="w-full bg-dark-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-cyan transition-colors"
+                            />
+                            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">Displayed in Navbar and SEO titles.</p>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Footer Description</label>
+                            <textarea
+                                rows="2"
+                                value={identityData.footerDescription || ''}
+                                onChange={(e) => setIdentityData(prev => ({ ...prev, footerDescription: e.target.value }))}
+                                className="w-full bg-dark-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-cyan transition-colors resize-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Footer Copyright</label>
+                            <input
+                                type="text"
+                                value={identityData.footerCopyright || ''}
+                                onChange={(e) => setIdentityData(prev => ({ ...prev, footerCopyright: e.target.value }))}
+                                className="w-full bg-dark-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-cyan transition-colors"
+                            />
+                        </div>
+                    </div>
+                    
+                    <button
+                        type="button"
+                        onClick={handleSaveIdentity}
+                        disabled={saving}
+                        className="w-full btn-secondary py-3 flex items-center justify-center gap-2"
+                    >
+                        <Save size={16} /> Save Identity
+                    </button>
+                </div>
+
+                {/* Hero Settings */}
+                <div className="glass-modern p-8 rounded-3xl border border-white/5 space-y-6">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-8">
                     <div>
                         <h3 className="text-2xl font-black text-white">Hero Section</h3>
@@ -205,8 +281,8 @@ const HomeSettings = () => {
                         />
                     </div>
                 </div>
-            </section>
-
+            </div>
+        </div>
             <section className="glass-panel p-8 rounded-3xl border border-white/10">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-8">
                     <div>

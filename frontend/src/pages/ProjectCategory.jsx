@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import api from '../api/axios';
-import { Calendar, Target, CheckCircle2, Rocket, ArrowUpRight, X, ExternalLink, Github } from 'lucide-react';
+import { Calendar, Target, CheckCircle2, Rocket, ArrowUpRight, X, ExternalLink, Github, Download } from 'lucide-react';
 import Magnetic from '../components/common/Magnetic';
 import BentoItem from '../components/common/BentoItem';
+import CoverImage from '../components/CoverImage';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -172,7 +173,7 @@ const ProjectCategory = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="h-64 md:h-full rounded-3xl overflow-hidden relative">
                                     {selectedProject.imageUrl ? (
-                                        <img src={selectedProject.imageUrl} className="w-full h-full object-cover" alt="" />
+                                        <CoverImage src={selectedProject.imageUrl} className="w-full h-full object-cover" alt="" />
                                     ) : (
                                         <div className="w-full h-full bg-neon-purple/20" />
                                     )}
@@ -195,6 +196,11 @@ const ProjectCategory = () => {
                                         {selectedProject.githubUrl && (
                                             <a href={selectedProject.githubUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary flex items-center gap-2">
                                                 Github <Github size={16} />
+                                            </a>
+                                        )}
+                                        {selectedProject.apkUrl && (
+                                            <a href={selectedProject.apkUrl} target="_blank" rel="noopener noreferrer" download className="btn-secondary flex items-center gap-2 text-neon-cyan border-neon-cyan/20 hover:bg-neon-cyan/10">
+                                                Download APK <Download size={16} />
                                             </a>
                                         )}
                                     </div>
@@ -223,7 +229,7 @@ const BentoProjectItem = ({ project, index }) => {
         <BentoItem span="" className="glass-modern neon-glow-border group min-h-[500px] md:min-h-[600px] p-0 overflow-hidden h-full">
             <div className="absolute inset-0 w-full h-full z-0">
                 {project.imageUrl ? (
-                    <img src={project.imageUrl} className="w-full h-full object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-1000 group-hover:scale-105" alt="" />
+                    <CoverImage src={project.imageUrl} className="w-full h-full object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-1000 group-hover:scale-105" alt="" />
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-neon-purple/10 to-neon-cyan/5 group-hover:opacity-50 transition-opacity duration-1000" />
                 )}

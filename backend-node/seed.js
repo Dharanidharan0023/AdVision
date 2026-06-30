@@ -105,10 +105,17 @@ async function main() {
                 { name: 'Harshadjee Studio', role: 'Member / Collaborator', url: 'https://youtube.com/@harshadjee?si=mKT_TSE762ii_mXg', type: 'users' }
             ]),
             joinTitle: 'Join the Movement',
-            joinYoutubeLink: 'https://youtube.com/@dharanixstudio',
-            joinInstagramLink: 'https://www.instagram.com/visionofad',
             imageUrl: 'https://images.unsplash.com/photo-1492691523569-44058d45e3ea?auto=format&fit=crop&q=80'
         }
+    });
+
+    // Create Social Links
+    await prisma.socialLink.createMany({
+        data: [
+            { platform: 'youtube', type: 'primary', url: 'https://youtube.com/@dharanixstudio', label: 'Main Channel' },
+            { platform: 'instagram', type: 'primary', url: 'https://www.instagram.com/visionofad', label: 'Main Account' },
+            { platform: 'twitter', type: 'primary', url: 'https://twitter.com/visionofad', label: 'Main Account' }
+        ]
     });
 
     console.log('Seeding completed!');

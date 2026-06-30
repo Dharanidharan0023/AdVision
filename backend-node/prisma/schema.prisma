@@ -72,8 +72,6 @@ model About {
   communityText    String? @default("Rising")
   brandsList       String? 
   joinTitle        String? @default("Join the Movement")
-  joinYoutubeLink  String? @default("https://youtube.com/@dharanixstudio")
-  joinInstagramLink String? @default("https://www.instagram.com/visionofad")
   imageUrl        String?
   metaTitle       String?
   metaDescription String?
@@ -114,4 +112,17 @@ model ContactMessage {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model SocialLink {
+  id        Int      @id @default(autoincrement())
+  platform  String   // e.g., 'youtube', 'instagram', 'twitter'
+  type      String   // e.g., 'primary', 'secondary'
+  url       String
+  label     String?  // Optional display name
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([platform, type]) // Ensures only one primary/secondary per platform
 }

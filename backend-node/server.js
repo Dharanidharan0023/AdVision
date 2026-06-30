@@ -33,7 +33,7 @@ app.use(helmet({ crossOriginResourcePolicy: false })); // Allow cross-origin sta
 app.use(compression()); // Compress responses
 
 // CORS Configuration
-const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:3000', 'http://localhost:5173'];
+const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:3000', 'http://localhost:5173', 'http://10.132.192.235:3000'];
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.includes(origin)) {
@@ -90,10 +90,23 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// --- Public Routes ---
 app.get('/api/public/posts', async (req, res) => {
   try {
     const posts = await prisma.post.findMany({ orderBy: { createdAt: 'desc' } });
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/public/featured-posts', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 3;
+    const posts = await prisma.post.findMany({
+      where: { featured: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
     res.json(posts);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -126,6 +139,31 @@ app.get('/api/public/about', async (req, res) => {
     const about = await prisma.about.findFirst({ orderBy: { updatedAt: 'desc' } });
     if (about) res.json(about);
     else res.status(404).json({ error: 'About data not found' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/public/contact-messages', async (req, res) => {
+  try {
+    const message = await prisma.contactMessage.create({
+      data: {
+        name: req.body.name,
+        email: req.body.email,
+        message: req.body.message
+      }
+    });
+    res.json(message);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Social Links Public Routes ---
+app.get('/api/public/social-links', async (req, res) => {
+  try {
+    const links = await prisma.socialLink.findMany({ where: { isActive: true } });
+    res.json(links);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -207,9 +245,45 @@ app.post('/api/admin/upload-apk', authenticateToken, upload.single('apk'), (req,
   }
 });
 
+// --- Contact Messages Admin Routes ---
+app.get('/api/admin/contact-messages', authenticateToken, async (req, res) => {
+  try {
+    const messages = await prisma.contactMessage.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/admin/contact-messages/:id', authenticateToken, async (req, res) => {
+  try {
+    const { isRead } = req.body;
+    const message = await prisma.contactMessage.update({
+      where: { id: parseInt(req.params.id) },
+      data: { isRead }
+    });
+    res.json(message);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/contact-messages/:id', authenticateToken, async (req, res) => {
+  try {
+    await prisma.contactMessage.delete({
+      where: { id: parseInt(req.params.id) }
+    });
+    res.sendStatus(204);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/admin/posts', authenticateToken, async (req, res) => {
   try {
-    let { title, content, imageUrl, videoUrl, featured } = req.body;
+    let { title, content, imageUrl, videoUrl, featured, slug, category, tags, status, publishDate } = req.body;
     let videoId = null;
 
     if (videoUrl) {
@@ -229,7 +303,12 @@ app.post('/api/admin/posts', authenticateToken, async (req, res) => {
         imageUrl,
         videoUrl,
         videoId,
-        featured: featured || false
+        featured: featured || false,
+        slug,
+        category,
+        tags,
+        status,
+        publishDate: publishDate ? new Date(publishDate) : null
       }
     });
     res.json(post);
@@ -240,9 +319,13 @@ app.post('/api/admin/posts', authenticateToken, async (req, res) => {
 
 app.put('/api/admin/posts/:id', authenticateToken, async (req, res) => {
   try {
+    const data = { ...req.body };
+    if (data.publishDate === '') data.publishDate = null;
+    else if (data.publishDate) data.publishDate = new Date(data.publishDate);
+
     const post = await prisma.post.update({
       where: { id: parseInt(req.params.id) },
-      data: req.body
+      data
     });
     res.json(post);
   } catch (err) {
@@ -262,8 +345,72 @@ app.delete('/api/admin/posts/:id', authenticateToken, async (req, res) => {
 // Project Routes
 app.post('/api/admin/projects', authenticateToken, async (req, res) => {
   try {
-    const project = await prisma.project.create({ data: req.body });
+    const data = { ...req.body };
+    if (data.releaseDate === '') data.releaseDate = null;
+    else if (data.releaseDate) data.releaseDate = new Date(data.releaseDate);
+
+    const project = await prisma.project.create({ data });
     res.json(project);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Social Links Admin Routes ---
+app.get('/api/admin/social-links', authenticateToken, async (req, res) => {
+  try {
+    const links = await prisma.socialLink.findMany();
+    res.json(links);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/social-links', authenticateToken, async (req, res) => {
+  try {
+    const linksData = req.body;
+    if (!Array.isArray(linksData)) return res.status(400).json({ error: 'Expected array' });
+    
+    await prisma.$transaction(async (tx) => {
+      const currentLinks = await tx.socialLink.findMany();
+      const currentIds = currentLinks.map(l => l.id);
+      
+      const updatedIds = [];
+      for (const link of linksData) {
+        if (link.id) {
+          await tx.socialLink.update({ 
+            where: { id: link.id }, 
+            data: { 
+                platform: link.platform,
+                type: link.type,
+                url: link.url,
+                label: link.label,
+                isActive: link.isActive
+            } 
+          });
+          updatedIds.push(link.id);
+        } else {
+          const newLink = await tx.socialLink.create({ 
+              data: {
+                  platform: link.platform,
+                  type: link.type,
+                  url: link.url,
+                  label: link.label,
+                  isActive: link.isActive
+              } 
+          });
+          updatedIds.push(newLink.id);
+        }
+      }
+      
+      const idsToDelete = currentIds.filter(id => !updatedIds.includes(id));
+      if (idsToDelete.length > 0) {
+         await tx.socialLink.deleteMany({ where: { id: { in: idsToDelete } } });
+      }
+    });
+
+    const updatedLinks = await prisma.socialLink.findMany();
+    res.json(updatedLinks);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -271,9 +418,13 @@ app.post('/api/admin/projects', authenticateToken, async (req, res) => {
 
 app.put('/api/admin/projects/:id', authenticateToken, async (req, res) => {
   try {
+    const data = { ...req.body };
+    if (data.releaseDate === '') data.releaseDate = null;
+    else if (data.releaseDate) data.releaseDate = new Date(data.releaseDate);
+
     const project = await prisma.project.update({
       where: { id: parseInt(req.params.id) },
-      data: req.body
+      data
     });
     res.json(project);
   } catch (err) {

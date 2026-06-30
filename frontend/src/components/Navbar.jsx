@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 
 import Magnetic from './common/Magnetic';
+import { useSocial } from '../context/SocialContext';
+import { useSite } from '../context/SiteContext';
 
 /* =========================================================
    KEYBOARD NAVIGATION
@@ -201,6 +203,10 @@ const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
 
     const location = useLocation();
+    
+    const { getPrimaryLink, loading } = useSocial();
+    const { siteSettings } = useSite();
+    const primaryYoutube = getPrimaryLink('youtube');
 
     const { width, top, borderRadius, backdropBlur, scale, shadow } =
         useScrollAnimation();
@@ -333,14 +339,10 @@ const Navbar = () => {
                                         ]
                                     }}
                                     transition={{ duration: 4, repeat: Infinity }}
-                                    className="relative text-[30px] md:text-[34px] font-black tracking-[0.25em] uppercase leading-none text-white"
+                                    className="relative text-[26px] md:text-[30px] font-black tracking-[0.2em] uppercase leading-none text-white drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]"
                                     style={{ fontFamily: "'Oxanium', sans-serif" }}
                                 >
-                                    DHARAN
-                                    <span className="text-cyan-400 font-extrabold text-[36px] md:text-[40px] drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]">
-                                        I
-                                    </span>
-                                    X
+                                    {siteSettings?.websiteName || 'Nexus AV'}
                                 </motion.h1>
 
                                 {/* Animated underline */}
@@ -382,20 +384,21 @@ const Navbar = () => {
                             <div className="mx-4 h-7 w-px bg-white/10" />
 
                             {/* YouTube */}
-                            <Magnetic>
-                                <motion.a
-                                    whileHover={{ scale: 1.08 }}
-                                    whileTap={{ scale: 0.92 }}
-                                    href="https://youtube.com/@dharanixstudio?si=F1bscEi6ID2I3vyk"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label="Visit YouTube Channel"
-                                    className="p-3 rounded-full bg-white/[0.04] border border-white/[0.06] hover:bg-red-500/10 hover:text-[#ff0000] hover:border-red-500/30 hover:shadow-[0_0_15px_rgba(255,0,0,0.3)] transition-all text-white/70 flex items-center justify-center"
-                                >
-                                    <Youtube size={16} />
-                                </motion.a>
-                            </Magnetic>
-
+                            {(!loading && primaryYoutube) && (
+                                <Magnetic>
+                                    <motion.a
+                                        whileHover={{ scale: 1.08 }}
+                                        whileTap={{ scale: 0.92 }}
+                                        href={primaryYoutube}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="Visit YouTube Channel"
+                                        className="p-3 rounded-full bg-white/[0.04] border border-white/[0.06] hover:bg-red-500/10 hover:text-[#ff0000] hover:border-red-500/30 hover:shadow-[0_0_15px_rgba(255,0,0,0.3)] transition-all text-white/70 flex items-center justify-center"
+                                    >
+                                        <Youtube size={16} />
+                                    </motion.a>
+                                </Magnetic>
+                            )}
 
                         </div>
 

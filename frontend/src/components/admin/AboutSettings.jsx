@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
-import { Save, Info, Edit3, Trash2, Plus, Users, Video, Heart, Link as LinkIcon } from 'lucide-react';
+import { Save, Info, Edit3, Trash2, Plus, Users, Video, Heart, Link as LinkIcon, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AboutSettings = () => {
@@ -17,59 +17,67 @@ const AboutSettings = () => {
         communityText: '',
         brandsList: [],
         joinTitle: '',
-        joinYoutubeLink: '',
-        joinInstagramLink: '',
         imageUrl: '',
         metaTitle: '',
         metaDescription: '',
         keywords: ''
     });
+    
+    const [socialLinks, setSocialLinks] = useState([]);
+    
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const descriptionRef = useRef(null);
 
     useEffect(() => {
-        const fetchAbout = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get('/public/about');
-                if (res.data) {
+                const [aboutRes, socialRes] = await Promise.all([
+                    api.get('/public/about'),
+                    api.get('/admin/social-links')
+                ]);
+                
+                if (aboutRes.data) {
                     let parsedBrands = [];
                     try {
-                        parsedBrands = res.data.brandsList ? JSON.parse(res.data.brandsList) : [];
+                        parsedBrands = aboutRes.data.brandsList ? JSON.parse(aboutRes.data.brandsList) : [];
                     } catch (_err) {
                         parsedBrands = [];
                     }
 
                     setAbout({
-                        id: res.data.id || null,
-                        title: res.data.title || '',
-                        subtitle: res.data.subtitle || '',
-                        tagsLine: res.data.tagsLine || '',
-                        ourStoryTitle: res.data.ourStoryTitle || '',
-                        description: res.data.description || '',
-                        subscribersCount: res.data.subscribersCount || '',
-                        videosCount: res.data.videosCount || '',
-                        viewsCount: res.data.viewsCount || '',
-                        communityText: res.data.communityText || '',
+                        id: aboutRes.data.id || null,
+                        title: aboutRes.data.title || '',
+                        subtitle: aboutRes.data.subtitle || '',
+                        tagsLine: aboutRes.data.tagsLine || '',
+                        ourStoryTitle: aboutRes.data.ourStoryTitle || '',
+                        description: aboutRes.data.description || '',
+                        subscribersCount: aboutRes.data.subscribersCount || '',
+                        videosCount: aboutRes.data.videosCount || '',
+                        viewsCount: aboutRes.data.viewsCount || '',
+                        communityText: aboutRes.data.communityText || '',
                         brandsList: parsedBrands,
-                        joinTitle: res.data.joinTitle || '',
-                        joinYoutubeLink: res.data.joinYoutubeLink || '',
-                        joinInstagramLink: res.data.joinInstagramLink || '',
-                        imageUrl: res.data.imageUrl || '',
-                        metaTitle: res.data.metaTitle || '',
-                        metaDescription: res.data.metaDescription || '',
-                        keywords: res.data.keywords || ''
+                        joinTitle: aboutRes.data.joinTitle || '',
+                        imageUrl: aboutRes.data.imageUrl || '',
+                        metaTitle: aboutRes.data.metaTitle || '',
+                        metaDescription: aboutRes.data.metaDescription || '',
+                        keywords: aboutRes.data.keywords || ''
                     });
                 }
+                
+                if (socialRes.data) {
+                    setSocialLinks(socialRes.data);
+                }
+                
             } catch (err) {
-                console.error('Error fetching about info:', err);
-                setMessage({ type: 'error', text: 'Unable to load about page content.' });
+                console.error('Error fetching data:', err);
+                setMessage({ type: 'error', text: 'Unable to load settings.' });
             } finally {
                 setLoading(false);
             }
         };
-        fetchAbout();
+        fetchData();
     }, []);
 
     const handleChange = (e) => {
@@ -102,6 +110,23 @@ const AboutSettings = () => {
         newBrands.splice(index, 1);
         setAbout(prev => ({ ...prev, brandsList: newBrands }));
     };
+    
+    // Social Links Logic
+    const handleSocialChange = (index, field, value) => {
+        const newLinks = [...socialLinks];
+        newLinks[index][field] = value;
+        setSocialLinks(newLinks);
+    };
+
+    const addSocialLink = () => {
+        setSocialLinks(prev => [...prev, { platform: 'youtube', type: 'secondary', url: '', label: '', isActive: true }]);
+    };
+
+    const removeSocialLink = (index) => {
+        const newLinks = [...socialLinks];
+        newLinks.splice(index, 1);
+        setSocialLinks(newLinks);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -110,7 +135,7 @@ const AboutSettings = () => {
 
         try {
             const payload = { ...about, brandsList: JSON.stringify(about.brandsList) };
-            delete payload.id; // Not needed in payload if URL has it
+            delete payload.id;
 
             if (about.id) {
                 await api.put(`/admin/about/${about.id}`, payload);
@@ -118,11 +143,14 @@ const AboutSettings = () => {
                 const res = await api.post('/admin/about', payload);
                 setAbout((prev) => ({ ...prev, id: res.data.id }));
             }
+            
+            // Save social links
+            await api.post('/admin/social-links', socialLinks);
 
-            setMessage({ type: 'success', text: 'About settings updated successfully!' });
+            setMessage({ type: 'success', text: 'Settings updated successfully!' });
         } catch (err) {
-            console.error('Error saving about info:', err);
-            setMessage({ type: 'error', text: 'Failed to update about settings.' });
+            console.error('Error saving info:', err);
+            setMessage({ type: 'error', text: 'Failed to update settings.' });
         } finally {
             setSaving(false);
         }
@@ -180,14 +208,59 @@ const AboutSettings = () => {
                     </div>
                 </div>
 
-                {/* Stats Configuration */}
-                <div className="space-y-6 bg-white/5 border border-white/10 p-8 rounded-3xl">
-                    <h3 className="text-xl font-black text-white uppercase tracking-widest mb-6">Statistics Display</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                        <FormField label="Subscribers" icon={Users} name="subscribersCount" value={about.subscribersCount} onChange={handleChange} placeholder="1.09K+" />
-                        <FormField label="Videos" icon={Video} name="videosCount" value={about.videosCount} onChange={handleChange} placeholder="105+" />
-                        <FormField label="Views" icon={Heart} name="viewsCount" value={about.viewsCount} onChange={handleChange} placeholder="274K+" />
-                        <FormField label="Community" icon={Heart} name="communityText" value={about.communityText} onChange={handleChange} placeholder="Rising" />
+                {/* Social Connect Configuration */}
+                <div className="space-y-6 bg-white/5 border border-white/10 p-8 rounded-3xl border-neon-cyan/30">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-2">
+                            <Share2 className="text-neon-cyan" size={20} /> Centralized Social Links
+                        </h3>
+                        <button type="button" onClick={addSocialLink} className="flex items-center gap-2 px-4 py-2 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan/20 border border-neon-cyan/20 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors">
+                            <Plus size={14} /> Add Platform
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {socialLinks.map((link, idx) => (
+                            <div key={idx} className={`flex flex-col xl:flex-row items-center gap-4 bg-black/40 p-4 rounded-2xl border ${link.isActive ? 'border-white/10' : 'border-red-500/20 opacity-70'}`}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 flex-1 w-full">
+                                    <select value={link.platform} onChange={(e) => handleSocialChange(idx, 'platform', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none appearance-none">
+                                        <option value="youtube">YouTube</option>
+                                        <option value="instagram">Instagram</option>
+                                        <option value="twitter">Twitter / X</option>
+                                        <option value="facebook">Facebook</option>
+                                        <option value="linkedin">LinkedIn</option>
+                                        <option value="website">Website</option>
+                                    </select>
+                                    
+                                    <select value={link.type} onChange={(e) => handleSocialChange(idx, 'type', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none appearance-none">
+                                        <option value="primary">Primary (Global)</option>
+                                        <option value="secondary">Secondary (About Page)</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    
+                                    <input type="text" placeholder="Optional Label (e.g., Main Channel)" value={link.label || ''} onChange={(e) => handleSocialChange(idx, 'label', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none" />
+                                    
+                                    <input type="url" placeholder="https://..." value={link.url} onChange={(e) => handleSocialChange(idx, 'url', e.target.value)} className="w-full xl:col-span-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-purple outline-none" required />
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <label className="flex items-center cursor-pointer">
+                                        <div className="relative">
+                                            <input type="checkbox" className="sr-only" checked={link.isActive} onChange={(e) => handleSocialChange(idx, 'isActive', e.target.checked)} />
+                                            <div className={`block w-10 h-6 rounded-full transition-colors ${link.isActive ? 'bg-neon-cyan' : 'bg-gray-600'}`}></div>
+                                            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${link.isActive ? 'translate-x-4' : ''}`}></div>
+                                        </div>
+                                        <span className="ml-3 text-xs font-bold text-gray-400 uppercase tracking-widest">{link.isActive ? 'Active' : 'Hidden'}</span>
+                                    </label>
+                                    
+                                    <button type="button" onClick={() => removeSocialLink(idx)} className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl transition-colors ml-4">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {socialLinks.length === 0 && (
+                            <p className="text-gray-500 text-sm text-center py-6">No social links added yet. Add primary links for them to appear globally.</p>
+                        )}
                     </div>
                 </div>
 
@@ -222,17 +295,6 @@ const AboutSettings = () => {
                         {about.brandsList.length === 0 && (
                             <p className="text-gray-500 text-sm text-center py-6">No brands or collaborations added yet.</p>
                         )}
-                    </div>
-                </div>
-
-                {/* Social Connect Configuration */}
-                <div className="space-y-6 bg-white/5 border border-white/10 p-8 rounded-3xl">
-                    <h3 className="text-xl font-black text-white uppercase tracking-widest mb-6">Social Connect</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField label="Join Title" icon={Info} name="joinTitle" value={about.joinTitle} onChange={handleChange} placeholder="e.g. Join the Movement" />
-                        <div className="hidden md:block"></div>
-                        <FormField label="YouTube Link" icon={LinkIcon} name="joinYoutubeLink" value={about.joinYoutubeLink} onChange={handleChange} placeholder="https://youtube.com/..." />
-                        <FormField label="Instagram Link" icon={LinkIcon} name="joinInstagramLink" value={about.joinInstagramLink} onChange={handleChange} placeholder="https://instagram.com/..." />
                     </div>
                 </div>
 

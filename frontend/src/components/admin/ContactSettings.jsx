@@ -12,7 +12,6 @@ const ContactSettings = () => {
     address: '',
     googleMapUrl: '',
     businessHours: '',
-    socialLinks: { youtube: '', instagram: '', twitter: '' },
     contactFormEnabled: true,
     contactFormNote: ''
   });
@@ -28,9 +27,7 @@ const ContactSettings = () => {
           setContact((prev) => ({
             ...prev,
             ...res.data,
-            socialLinks: res.data.socialLinks
-              ? JSON.parse(res.data.socialLinks)
-              : prev.socialLinks
+            ...res.data
           }));
         }
       } catch (err) {
@@ -45,15 +42,7 @@ const ContactSettings = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (name.startsWith('social_')) {
-      const key = name.replace('social_', '');
-      setContact((prev) => ({
-        ...prev,
-        socialLinks: { ...prev.socialLinks, [key]: value }
-      }));
-      return;
-    }
-
+    
     setContact((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -67,15 +56,14 @@ const ContactSettings = () => {
 
     try {
       const payload = {
-        ...contact,
-        socialLinks: JSON.stringify(contact.socialLinks)
+        ...contact
       };
 
       const res = contact.id
         ? await api.put(`/admin/contact/${contact.id}`, payload)
         : await api.post('/admin/contact', payload);
 
-      setContact((prev) => ({ ...prev, ...res.data, socialLinks: JSON.parse(res.data.socialLinks || '{}') }));
+      setContact((prev) => ({ ...prev, ...res.data }));
       setMessage({ type: 'success', text: 'Contact page saved successfully.' });
     } catch (err) {
       console.error('Error saving contact data:', err);
@@ -99,7 +87,6 @@ const ContactSettings = () => {
         address: '',
         googleMapUrl: '',
         businessHours: '',
-        socialLinks: { youtube: '', instagram: '', twitter: '' },
         contactFormEnabled: true,
         contactFormNote: ''
       });
@@ -184,12 +171,6 @@ const ContactSettings = () => {
               placeholder="Mon - Sat / 10AM - 8PM"
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <InputGroup label="Instagram" name="social_instagram" value={contact.socialLinks.instagram} onChange={handleChange} placeholder="https://instagram.com/..." />
-          <InputGroup label="YouTube" name="social_youtube" value={contact.socialLinks.youtube} onChange={handleChange} placeholder="https://youtube.com/..." />
-          <InputGroup label="Twitter" name="social_twitter" value={contact.socialLinks.twitter} onChange={handleChange} placeholder="https://twitter.com/..." />
         </div>
 
         <div className="space-y-4">
